@@ -13,7 +13,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Log.d("fcrow","--------------------------------- hi -----------------------");
-        Log.d("fcrow", Orm.genCreateTable(Account.class));
-
+        DBHelper dbh = new DBHelper(getBaseContext());
     }
 }
