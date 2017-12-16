@@ -1,8 +1,6 @@
 package tech.overturn.crowmail.models;
 
 public class Account {
-    static String tableName = "account";
-    static String abbrv = "a";
     Integer _id;
     String name;
     String user;
