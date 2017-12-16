@@ -11,29 +11,39 @@ import android.util.Log;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 
-public class Orm extends SQLiteOpenHelper {
+public class Orm {
 
-    public static ModelIfc objFromCursor(Cursor cursor, List<String> cols, Class cls) {
-        cls obj = cls.newInstance();
+    public static ModelIfc objFromCursor(Cursor cursor, String[] cols, Class<ModelIfc> cls) {
+        ModelIfc obj = null;
+        try {
+            obj = cls.newInstance();
+        }catch (InstantiationException e) {
+            // TODO: handle this better
+        }catch (IllegalAccessException e) {
+            // TODO: handle this better
+        };
         int idx;
         Field fields[] = cls.getFields();
+        List<String> colsList = Arrays.asList(cols);
         for (int i = 0; i < fields.length; i++) {
-            Field f = fields[i];
-            int idx = cols.indexOf(f.getName().toLowerCase());
-            if(idx == -1) {
-                continue;
-            }
-            switch (f.getType()) {
-                case Integer:
+            try {
+                Field f = fields[i];
+                idx = colsList.indexOf(f.getName().toLowerCase());
+                if (idx == -1) {
+                    continue;
+                }
+                if (f.getType().equals(Integer.class)) {
                     f.set(obj, cursor.getInt(idx));
-                    break;
-                case String:
+                } else if (f.getType().equals(String.class)) {
                     f.set(obj, cursor.getString(idx));
-                    break;
+                }
+            } catch (IllegalAccessException e){
+                // TODO: figure out how to handle this better
             }
         }
         return obj;
@@ -63,59 +73,73 @@ public class Orm extends SQLiteOpenHelper {
     }
 
     public static void update(SQLiteDatabase db, ModelIfc obj) {
-        String table = obj.class.getSimpleName().toLowerCase();
+        String table = obj.getClass().getSimpleName().toLowerCase();
         ContentValues vals = new ContentValues();
-        Field fields[] = obj.class.getFields();
+        Field fields[] = obj.getClass().getFields();
         for (int i = 0; i < fields.length; i++) {
-            vals.put(fields[i].getName(), fields[i].get(obj).toString());
+            try {
+                vals.put(fields[i].getName(), fields[i].get(obj).toString());
+            } catch (IllegalAccessException e){
+                // TODO: handle this better
+            }
         }
-        db.update(table, vals, "_id = ?", String[]{obj._id.toString()});
+        String[] idstr = { String.format("%d", obj._id)};
+        db.update(table, vals, "_id = ?", idstr);
     }
 
     public static void insert(SQLiteDatabase db, ModelIfc obj) {
-        String table = obj.class.getSimpleName().toLowerCase();
+        String table = obj.getClass().getSimpleName().toLowerCase();
         ContentValues vals = new ContentValues();
-        Field fields[] = obj.class.getFields();
+        Field fields[] = obj.getClass().getFields();
         for (int i = 0; i < fields.length; i++) {
-            vals.put(fields[i].getName(), fields[i].get(obj).toString());
+            try {
+                vals.put(fields[i].getName(), fields[i].get(obj).toString());
+            } catch (IllegalAccessException e) {
+                // TODO: handle this better
+            }
         }
         obj._id = db.insert(table, null, vals);
     }
 
     public static void upsert(SQLiteDatabase db, ModelIfc model) {
-        if(model._id){
-            this.update(db, model);
+        if(model._id != 0){
+            update(db, model);
         }else{
-            this.insert(db, model);
+            insert(db, model);
         }
     }
 
-    public static List<String> getSelectColumns(Class<ModelIfc> cls) {
-        List<Field> cols = Arrays.asList(cls.getFields());
-        return cols.stream().map(x -> x.getName());
+    public static String[] getSelectColumns(Class<ModelIfc> cls) {
+        Field[] fields =  cls.getFields();
+        String[] cols = new String[fields.length];
+        for(int i = 0; i < fields.length; i++) {
+            cols[i] = fields[i].getName();
+        }
+        return cols;
     }
 
     public static ModelIfc byId(SQLiteDatabase db, Class<ModelIfc> cls, Integer id) {
-        List<String> cols = this.getSelectColumns(cls);
-        SQLiteCursor cursor = db.query(
+        String[] cols = getSelectColumns(cls);
+        String[] idstr = { id.toString(0)};
+        Cursor cursor = db.query(
             cls.getSimpleName().toLowerCase(),
             cols,
             "_id = ?",
-            String[]{ id.toString(0)}
+            idstr,
             null,
             null,
             null
-        )
-        cursor.moveToNext(0);
-        ModelIfc obj =  this.objFromCursor(cursor, cols, cls);
+        );
+        cursor.moveToNext();
+        ModelIfc obj =  objFromCursor(cursor, cols, cls);
         cursor.close();
         return obj;
     }
 
-    public static List<ModelIfc> byQuery(Class<ModelIfc> cls, String where, String order) {
-        List<String> cols = this.getSelectColumns(cls);
-        List<ModelIfc> objs = new List<ModelIfc>();
-        SQLiteCursor cursor = db.query(
+    public static List<ModelIfc> byQuery(SQLiteDatabase db, Class<ModelIfc> cls, String where, String order) {
+        String[] cols = getSelectColumns(cls);
+        List<ModelIfc> objs = new ArrayList<ModelIfc>();
+        Cursor cursor = db.query(
                 cls.getSimpleName().toLowerCase(),
                 cols,
                 null,
@@ -125,7 +149,7 @@ public class Orm extends SQLiteOpenHelper {
                 null
         );
         while(cursor.moveToNext()) {
-            objs.add(this.objFromCursor(cursor, cols, cls));
+            objs.add(objFromCursor(cursor, cols, cls));
         }
         cursor.close();
         return objs;

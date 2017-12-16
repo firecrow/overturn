@@ -1,7 +1,8 @@
 package tech.overturn.crowmail.models;
 
-public class Account {
-    Integer _id;
+import tech.overturn.crowmail.ModelIfc;
+
+public class Account extends ModelIfc {
     String name;
     String user;
     String password;

@@ -1,8 +1,7 @@
 package tech.overturn.crowmail;
 
-public interface ModelIfc {
-    public static String abbrv = "";
-    public int _id = 0;
+public class ModelIfc {
+    public long _id = 0;
 }
 
 
