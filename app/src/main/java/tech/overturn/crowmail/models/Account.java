@@ -3,13 +3,13 @@ package tech.overturn.crowmail.models;
 import tech.overturn.crowmail.ModelIfc;
 
 public class Account extends ModelIfc {
-    String name;
-    String user;
-    String password;
-    String smtpHost;
-    Integer smtpPort;
-    String smtpSslType;
-    String imapHost;
-    Integer imapPort;
-    String imapSslType;
+    public String name;
+    public String user;
+    public String password;
+    public String smtpHost;
+    public Integer smtpPort;
+    public String smtpSslType;
+    public String imapHost;
+    public Integer imapPort;
+    public String imapSslType;
 }

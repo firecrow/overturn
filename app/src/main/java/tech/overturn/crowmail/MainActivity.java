@@ -1,5 +1,6 @@
 package tech.overturn.crowmail;
 
+import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -14,5 +15,11 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Log.d("fcrow","--------------------------------- hi -----------------------");
         DBHelper dbh = new DBHelper(getBaseContext());
+        Account a = new Account();
+        a.imapHost = "http://example.com";
+        Log.d("fcrow","----------- before _id:"+a._id+" -----------------------");
+        SQLiteDatabase db = dbh.getWritableDatabase();
+        Orm.insert(db, a);
+        Log.d("fcrow","----------- after _id:"+a._id+" -----------------------");
     }
 }

@@ -92,13 +92,17 @@ public class Orm {
         ContentValues vals = new ContentValues();
         Field fields[] = obj.getClass().getFields();
         for (int i = 0; i < fields.length; i++) {
+            String fname = fields[i].getName();
             try {
-                vals.put(fields[i].getName(), fields[i].get(obj).toString());
+                if(fname != "_id" && fname != "serialVersionUID" && fields[i].get(obj) != null) {
+                    vals.put(fname, fields[i].get(obj).toString());
+                }
             } catch (IllegalAccessException e) {
                 // TODO: handle this better
+                Log.e("fcrow", "error in insert illegal");
             }
         }
-        obj._id = db.insert(table, null, vals);
+        obj._id = db.insertOrThrow(table, null, vals);
     }
 
     public static void upsert(SQLiteDatabase db, ModelIfc model) {
