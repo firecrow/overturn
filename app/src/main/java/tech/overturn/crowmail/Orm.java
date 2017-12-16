@@ -1,5 +1,6 @@
 package tech.overturn.crowmail;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.SQLException;
@@ -61,16 +62,32 @@ public class Orm extends SQLiteOpenHelper {
         return query;
     }
 
-    public static void update(ModelIfc model) {
-
+    public static void update(SQLiteDatabase db, ModelIfc obj) {
+        String table = obj.class.getSimpleName().toLowerCase();
+        ContentValues vals = new ContentValues();
+        Field fields[] = obj.class.getFields();
+        for (int i = 0; i < fields.length; i++) {
+            vals.put(fields[i].getName(), fields[i].get(obj).toString());
+        }
+        db.update(table, vals, "_id = ?", String[]{obj._id.toString()});
     }
 
-    public static void insert(ModelIfc model) {
-
+    public static void insert(SQLiteDatabase db, ModelIfc obj) {
+        String table = obj.class.getSimpleName().toLowerCase();
+        ContentValues vals = new ContentValues();
+        Field fields[] = obj.class.getFields();
+        for (int i = 0; i < fields.length; i++) {
+            vals.put(fields[i].getName(), fields[i].get(obj).toString());
+        }
+        obj._id = db.insert(table, null, vals);
     }
 
-    public static void upsert(ModelIfc model) {
-
+    public static void upsert(SQLiteDatabase db, ModelIfc model) {
+        if(model._id){
+            this.update(db, model);
+        }else{
+            this.insert(db, model);
+        }
     }
 
     public static List<String> getSelectColumns(Class<ModelIfc> cls) {
@@ -96,14 +113,21 @@ public class Orm extends SQLiteOpenHelper {
     }
 
     public static List<ModelIfc> byQuery(Class<ModelIfc> cls, String where, String order) {
-        String abbrv = cls.getDeclaredField("abbrv").get(null);
-        String query = "SELECT "
-                + String.join(this.getSelectColumns(cls), ",")
-                + " FROM " + cls.getSimpleName().toLowerCase()
-                + where + " "
-                + order
-                ;
-        return this.objFromCursor();
+        List<String> cols = this.getSelectColumns(cls);
+        List<ModelIfc> objs = new List<ModelIfc>();
+        SQLiteCursor cursor = db.query(
+                cls.getSimpleName().toLowerCase(),
+                cols,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+        while(cursor.moveToNext()) {
+            objs.add(this.objFromCursor(cursor, cols, cls));
+        }
+        cursor.close();
+        return objs;
     }
-
 }
