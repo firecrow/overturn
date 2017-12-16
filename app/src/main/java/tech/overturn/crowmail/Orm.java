@@ -53,7 +53,7 @@ public class Orm {
         String query = "";
         String table = cls.getSimpleName().toLowerCase();
         query += "CREATE TABLE "+table +" ( ";
-        query += "_id INT PRIMARY KEY ";
+        query += "_id INTEGER PRIMARY KEY AUTOINCREMENT";
         Field fields[] = cls.getFields();
         Log.d("fcrow", String.format("%d",fields.length));
         for (int i = 0; i < fields.length; i++) {
