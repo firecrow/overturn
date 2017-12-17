@@ -26,6 +26,19 @@ public class ModelIfc {
             }
         }
     }
+
+    public void setUI(String fname, long ui){
+        Field f;
+        try {
+            f = getClass().getField(fname);
+            if (f.getType().equals(FieldMetaInteger.class)) {
+                ((FieldMetaInteger)f.get(this)).ui = ui;
+            } else if (f.getType().equals(FieldMetaString.class)) {
+                ((FieldMetaString)f.get(this)).ui = ui;
+            }
+        } catch(NoSuchFieldException e){
+        } catch(IllegalAccessException e){};
+    }
 }
 
 
