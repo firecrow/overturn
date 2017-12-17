@@ -13,7 +13,9 @@ public class DBHelper extends SQLiteOpenHelper {
 
     DBHelper(Context ctx) {
         super(ctx, DB_FNAME, null, DB_VERSION);
+        Log.d("fcrow", "---------------- db helper");
     }
+
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(Orm.getCreateTable(Account.class));
     }

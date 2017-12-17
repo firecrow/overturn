@@ -13,10 +13,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         Log.d("fcrow","--------------------------------- hi -----------------------");
         DBHelper dbh = new DBHelper(getBaseContext());
+        Log.d("fcrow","--------------------------------- after hi -----------------------");
         Account a = new Account();
-        a.imapHost = "http://example.com";
+        a.imapHost.value = "http://example.com";
         Log.d("fcrow","----------- before _id:"+a._id+" -----------------------");
         SQLiteDatabase db = dbh.getWritableDatabase();
         Orm.insert(db, a);

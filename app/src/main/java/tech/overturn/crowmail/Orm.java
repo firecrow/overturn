@@ -37,10 +37,10 @@ public class Orm {
                 if (idx == -1) {
                     continue;
                 }
-                if (f.getType().equals(Integer.class)) {
-                    f.set(obj, cursor.getInt(idx));
-                } else if (f.getType().equals(String.class)) {
-                    f.set(obj, cursor.getString(idx));
+                if (f.getType().equals(FieldMetaInteger.class)) {
+                    ((FieldMetaInteger)f.get(obj)).value = cursor.getInt(idx);
+                } else if (f.getType().equals(FieldMetaString.class)) {
+                    ((FieldMetaString)f.get(obj)).value = cursor.getString(idx);
                 }
             } catch (IllegalAccessException e){
                 // TODO: figure out how to handle this better
@@ -62,9 +62,9 @@ public class Orm {
                 continue;
             }
             query += ", "+ f.getName().toLowerCase();
-            if(f.getType().equals(Integer.class)) {
-                query += " INT ";
-            }else if(f.getType().equals(String.class)) {
+            if(f.getType().equals(FieldMetaInteger.class)) {
+                query += " INTEGER ";
+            }else if(f.getType().equals(FieldMetaString.class)) {
                 query += " TEXT ";
             }
         }
@@ -78,7 +78,7 @@ public class Orm {
         Field fields[] = obj.getClass().getFields();
         for (int i = 0; i < fields.length; i++) {
             try {
-                vals.put(fields[i].getName(), fields[i].get(obj).toString());
+                vals.put(fields[i].getName(), ((FieldMetaString)fields[i].get(obj)).value.toString());
             } catch (IllegalAccessException e){
                 // TODO: handle this better
             }
@@ -93,9 +93,21 @@ public class Orm {
         Field fields[] = obj.getClass().getFields();
         for (int i = 0; i < fields.length; i++) {
             String fname = fields[i].getName();
+            Field f = fields[i];
             try {
-                if(fname != "_id" && fname != "serialVersionUID" && fields[i].get(obj) != null) {
-                    vals.put(fname, fields[i].get(obj).toString());
+                if(fname != "_id" && fname != "serialVersionUID" && f.get(obj) != null) {
+                    if(f.getType() == FieldMetaInteger.class) {
+                        Integer value = ((FieldMetaInteger) f.get(obj)).value;
+                        if(value != null) {
+                            vals.put(fname, value.toString());
+                        }
+                    }
+                    else if(f.getType() == FieldMetaString.class) {
+                        String value = ((FieldMetaString) f.get(obj)).value;
+                        if(value != null) {
+                            vals.put(fname, ((FieldMetaString) f.get(obj)).value);
+                        }
+                    }
                 }
             } catch (IllegalAccessException e) {
                 // TODO: handle this better
