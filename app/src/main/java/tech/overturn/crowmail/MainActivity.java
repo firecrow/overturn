@@ -13,32 +13,35 @@ import tech.overturn.crowmail.models.Account;
 
 public class MainActivity extends AppCompatActivity {
 
+    public Account a;
     EditText host;
+    DBHelper dbh;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        dbh = new DBHelper(getBaseContext());
         setContentView(R.layout.activity_main);
-        basicDebug();
-        host = (EditText)findViewById(R.id.imapHost);
+        setUpUI();
         Button btn = (Button)findViewById(R.id.accountSave);
         btn.setOnClickListener(new View.OnClickListener() {
            public void onClick(View v) {
-               Log.d("fcrow", String.format("-------------------------%s", host.getText()));
+               save();
            }
         });
     }
-    public void basicDebug() {
-        Log.d("fcrow","--------------------------------- hi -----------------------");
-        DBHelper dbh = new DBHelper(getBaseContext());
-        Log.d("fcrow","--------------------------------- after hi -----------------------");
-        Account a = new Account();
-        a.data.imapHost = "http://example.com";
-        Log.d("fcrow","----------- before _id:"+a.data._id+" -----------------------");
-        SQLiteDatabase db = dbh.getWritableDatabase();
-        Orm.insert(db, Account.tableName, a.data);
-        Log.d("fcrow","----------- after _id:"+a.data._id+" -----------------------");
+
+    public void setUpUI() {
+        a = new Account();
         a.setUI("imapHost", (View) findViewById(R.id.imapHost));
+    }
+
+    public void save() {
+        SQLiteDatabase db = dbh.getWritableDatabase();
         Orm.backfillFromUI(a.data, a.ui);
-        Orm.update(db, Account.tableName, a.data);
+        if(a.data._id != null) {
+            Orm.update(db, Account.tableName, a.data);
+        } else {
+            Orm.insert(db, Account.tableName, a.data);
+        }
     }
 }

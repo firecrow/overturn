@@ -129,7 +129,9 @@ public class Orm {
                 Log.e("fcrow", "error in insert illegal");
             }
         }
-        obj._id = db.insertOrThrow(table, null, vals);
+        if (vals.size() > 0) {
+            obj._id = db.insertOrThrow(table, null, vals);
+        }
     }
 
     public static String[] getSelectColumns(Class<Data> cls) {
@@ -186,11 +188,11 @@ public class Orm {
             View v = ui.get(name);
             if (v != null) {
                 try {
-                    if (v.getClass().equals(EditText.class)) {
-                        f.set(obj, ((EditText) v).getText());
-                    } else if (v.getClass().equals(Spinner.class)) {
+                    if (v instanceof EditText) {
+                        f.set(obj, ((EditText) v).getText().toString());
+                    } else if (v instanceof Spinner) {
                         f.set(obj, ((Spinner) v).getSelectedItem().toString());
-                    } else if (v.getClass().equals(RadioGroup.class)) {
+                    } else if (v instanceof RadioGroup) {
                         int id = ((RadioGroup)v).getCheckedRadioButtonId();
                         String value = ((RadioButton) v.findViewById(id)).getText().toString();
                         f.set(obj, value);
