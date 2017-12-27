@@ -185,17 +185,31 @@ public class Orm {
         for (int i = 0; i < fields.length; i++) {
             Field f = fields[i];
             String name = f.getName();
+            String value = null;
+            Class type = f.getType();
             View v = ui.get(name);
             if (v != null) {
                 try {
                     if (v instanceof EditText) {
-                        f.set(obj, ((EditText) v).getText().toString());
+                        value = ((EditText) v).getText().toString();
                     } else if (v instanceof Spinner) {
-                        f.set(obj, ((Spinner) v).getSelectedItem().toString());
+                        value = ((Spinner) v).getSelectedItem().toString();
                     } else if (v instanceof RadioGroup) {
                         int id = ((RadioGroup)v).getCheckedRadioButtonId();
-                        String value = ((RadioButton) v.findViewById(id)).getText().toString();
-                        f.set(obj, value);
+                        if(id != -1) {
+                            value = ((RadioButton) v.findViewById(id)).getText().toString();
+                        }
+                    }
+                    if(value != null) {
+                        if (type.equals(String.class)) {
+                            f.set(obj, value);
+                        } else if (type.equals(Integer.class)) {
+                            try {
+                                f.set(obj, Integer.parseInt(value));
+                            } catch (NumberFormatException e) {
+                                // TODO: better handle this;
+                            }
+                        }
                     }
                 }catch(IllegalAccessException e){
                     // TODO: figure out what to do

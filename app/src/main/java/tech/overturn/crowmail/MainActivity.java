@@ -33,6 +33,8 @@ public class MainActivity extends AppCompatActivity {
     public void setUpUI() {
         a = new Account();
         a.setUI("imapHost", (View) findViewById(R.id.imapHost));
+        a.setUI("imapPort", (View) findViewById(R.id.imapPort));
+        a.setUI("imapSslType", (View) findViewById(R.id.imapSslType));
     }
 
     public void save() {
