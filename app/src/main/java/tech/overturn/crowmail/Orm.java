@@ -8,18 +8,24 @@ import android.database.sqlite.SQLiteCursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
+import android.view.View;
+import android.widget.EditText;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
+import android.widget.Spinner;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 
 public class Orm {
 
-    public static ModelIfc objFromCursor(Cursor cursor, String[] cols, Class<ModelIfc> cls) {
-        ModelIfc obj = null;
+    public static Data objFromCursor(Cursor cursor, String[] cols, Class<Data> cls) {
+        Data obj = null;
         try {
             obj = cls.newInstance();
         }catch (InstantiationException e) {
@@ -72,23 +78,32 @@ public class Orm {
         return query;
     }
 
-    public static void update(SQLiteDatabase db, ModelIfc obj) {
-        String table = obj.getClass().getSimpleName().toLowerCase();
+    public static void update(SQLiteDatabase db, String table, Data obj) {
+        String className = obj.getClass().getName();
         ContentValues vals = new ContentValues();
         Field fields[] = obj.getClass().getFields();
         for (int i = 0; i < fields.length; i++) {
+            Field f = fields[i];
+            if (f.getName().equals("serialVersionUID")) {
+                continue;
+            }
             try {
-                vals.put(fields[i].getName(), fields[i].get(obj).toString());
+                Object value = f.get(obj);
+                if(className.equals(f.getDeclaringClass().getName()) && value != null) {
+                    Log.d("fcrow", String.format("------------>%s---%s vs %s", f.getName(), className, f.getDeclaringClass().getName()));
+                    vals.put(f.getName(), value.toString());
+                }
             } catch (IllegalAccessException e){
                 // TODO: handle this better
             }
         }
         String[] idstr = { String.format("%d", obj._id)};
-        db.update(table, vals, "_id = ?", idstr);
+        if (vals.size() > 0) {
+            db.update(table, vals, "_id = ?", idstr);
+        }
     }
 
-    public static void insert(SQLiteDatabase db, ModelIfc obj) {
-        String table = obj.getClass().getSimpleName().toLowerCase();
+    public static void insert(SQLiteDatabase db, String table, Data obj) {
         ContentValues vals = new ContentValues();
         Field fields[] = obj.getClass().getFields();
         for (int i = 0; i < fields.length; i++) {
@@ -117,15 +132,7 @@ public class Orm {
         obj._id = db.insertOrThrow(table, null, vals);
     }
 
-    public static void upsert(SQLiteDatabase db, ModelIfc model) {
-        if(model._id != 0){
-            update(db, model);
-        }else{
-            insert(db, model);
-        }
-    }
-
-    public static String[] getSelectColumns(Class<ModelIfc> cls) {
+    public static String[] getSelectColumns(Class<Data> cls) {
         Field[] fields =  cls.getFields();
         String[] cols = new String[fields.length];
         for(int i = 0; i < fields.length; i++) {
@@ -134,7 +141,7 @@ public class Orm {
         return cols;
     }
 
-    public static ModelIfc byId(SQLiteDatabase db, Class<ModelIfc> cls, Integer id) {
+    public static Data byId(SQLiteDatabase db, Class<Data> cls, Integer id) {
         String[] cols = getSelectColumns(cls);
         String[] idstr = { id.toString(0)};
         Cursor cursor = db.query(
@@ -147,14 +154,14 @@ public class Orm {
             null
         );
         cursor.moveToNext();
-        ModelIfc obj =  objFromCursor(cursor, cols, cls);
+        Data obj =  objFromCursor(cursor, cols, cls);
         cursor.close();
         return obj;
     }
 
-    public static List<ModelIfc> byQuery(SQLiteDatabase db, Class<ModelIfc> cls, String where, String order) {
+    public static List<Data> byQuery(SQLiteDatabase db, Class<Data> cls, String where, String order) {
         String[] cols = getSelectColumns(cls);
-        List<ModelIfc> objs = new ArrayList<ModelIfc>();
+        List<Data> objs = new ArrayList<Data>();
         Cursor cursor = db.query(
                 cls.getSimpleName().toLowerCase(),
                 cols,
@@ -169,5 +176,29 @@ public class Orm {
         }
         cursor.close();
         return objs;
+    }
+
+    public static void backfillFromUI(Data obj, Map<String, View> ui) {
+        Field[] fields =  obj.getClass().getFields();
+        for (int i = 0; i < fields.length; i++) {
+            Field f = fields[i];
+            String name = f.getName();
+            View v = ui.get(name);
+            if (v != null) {
+                try {
+                    if (v.getClass().equals(EditText.class)) {
+                        f.set(obj, ((EditText) v).getText());
+                    } else if (v.getClass().equals(Spinner.class)) {
+                        f.set(obj, ((Spinner) v).getSelectedItem().toString());
+                    } else if (v.getClass().equals(RadioGroup.class)) {
+                        int id = ((RadioGroup)v).getCheckedRadioButtonId();
+                        String value = ((RadioButton) v.findViewById(id)).getText().toString();
+                        f.set(obj, value);
+                    }
+                }catch(IllegalAccessException e){
+                    // TODO: figure out what to do
+                }
+            }
+        }
     }
 }
