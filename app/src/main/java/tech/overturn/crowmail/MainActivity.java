@@ -1,5 +1,6 @@
 package tech.overturn.crowmail;
 
+import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -37,7 +38,22 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Log.e("fcrow", String.format("-------------id %d", id));
+                goToAccount(id);
             }
         });
+
+        Button btn = (Button) findViewById(R.id.addAccount);
+        btn.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v){
+                goToAccount(0);
+            }
+        });
+    }
+
+    public void goToAccount(long id) {
+        Intent intent = new Intent(this, AccountActivity.class);
+        intent.putExtra("account_id", id);
+        startActivity(intent);
     }
 }

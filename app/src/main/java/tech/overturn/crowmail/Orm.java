@@ -146,20 +146,24 @@ public class Orm {
         return cols;
     }
 
-    public static Data byId(SQLiteDatabase db, Class<Data> cls, Integer id) {
+    public static Data byId(SQLiteDatabase db, String table, Class<? extends Data> cls, Integer id) {
         String[] cols = getSelectColumns(cls);
-        String[] idstr = { id.toString(0)};
         Cursor cursor = db.query(
-            cls.getSimpleName().toLowerCase(),
+            table,
             cols,
-            "_id = ?",
-            idstr,
+            String.format("_id = %d", id),
+            null,
             null,
             null,
             null
         );
-        cursor.moveToNext();
-        Data obj =  objFromCursor(cursor, cols, cls);
+        Data obj = null;
+        int count = cursor.getCount();
+        if(count == 1 && cursor.moveToNext()) {
+            obj = objFromCursor(cursor, cols, cls);
+        } else {
+            // TODO: handle this error
+        }
         cursor.close();
         return obj;
     }
@@ -191,8 +195,8 @@ public class Orm {
             String value = null;
             Class type = f.getType();
             View v = ui.get(name);
-            if (v != null) {
-                try {
+            try {
+                if (v != null && f.get(obj) != null) {
                     value  = f.get(obj).toString();
                     if (v instanceof EditText) {
                         ((EditText) v).setText(value);
@@ -209,9 +213,9 @@ public class Orm {
                             }
                         }
                     }
-                }catch(IllegalAccessException e){
-                    // TODO: figure out what to do
                 }
+            }catch(IllegalAccessException e){
+                // TODO: figure out what to do
             }
         }
     }

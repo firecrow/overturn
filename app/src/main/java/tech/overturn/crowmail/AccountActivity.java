@@ -1,5 +1,6 @@
 package tech.overturn.crowmail;
 
+import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -7,6 +8,7 @@ import android.view.View;
 import android.widget.Button;
 
 import tech.overturn.crowmail.models.Account;
+import tech.overturn.crowmail.models.AccountData;
 
 public class AccountActivity extends AppCompatActivity {
 
@@ -18,7 +20,16 @@ public class AccountActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_account);
         dbh = new DBHelper(getBaseContext());
+        Intent intent = getIntent();
+        Long id = intent.getLongExtra("account_id", 0);
+        if (id == 0) {
+            a = new Account();
+        } else {
+            a = new Account();
+            a.data = (AccountData) Orm.byId(dbh.getReadableDatabase(), Account.tableName, AccountData.class, id.intValue());
+        }
         setUpUI();
+        Orm.fillUI(a.data, a.ui);
         Button btn = (Button)findViewById(R.id.accountSave);
         btn.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -28,7 +39,6 @@ public class AccountActivity extends AppCompatActivity {
     }
 
     public void setUpUI() {
-        a = new Account();
         a.setUI("imapHost", (View) findViewById(R.id.imapHost));
         a.setUI("imapPort", (View) findViewById(R.id.imapPort));
         a.setUI("imapSslType", (View) findViewById(R.id.imapSslType));
