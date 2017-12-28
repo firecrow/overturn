@@ -13,4 +13,12 @@ public class AccountData extends Data {
     public String imapHost;
     public Integer imapPort;
     public String imapSslType;
+
+    public Integer getId(){
+        return this._id;
+    }
+
+    public void setId(Integer id){
+        this._id = id;
+    }
 }

@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
@@ -23,10 +24,11 @@ public class AccountActivity extends AppCompatActivity {
         Intent intent = getIntent();
         Long id = intent.getLongExtra("account_id", 0);
         if (id == 0) {
-            a = new Account();
+            this.a = new Account();
         } else {
-            a = new Account();
+            this.a = new Account();
             a.data = (AccountData) Orm.byId(dbh.getReadableDatabase(), Account.tableName, AccountData.class, id.intValue());
+            Log.d("fcrow", String.format("------------_id:%d imapHost:%s", a.data._id, a.data.imapHost));
         }
         setUpUI();
         Orm.fillUI(a.data, a.ui);
@@ -45,8 +47,10 @@ public class AccountActivity extends AppCompatActivity {
     }
 
     public void save() {
+        Log.d("fcrow", String.format("-----in save: _id:%d imapHost:%s", a.data._id, a.data.imapHost));
         SQLiteDatabase db = dbh.getWritableDatabase();
         Orm.backfillFromUI(a.data, a.ui);
+        Log.d("fcrow", String.format("-----in save after: _id:%d imapHost:%s", a.data._id, a.data.imapHost));
         if(a.data._id != null) {
             Orm.update(db, Account.tableName, a.data);
         } else {

@@ -8,15 +8,17 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
+import java.util.List;
+
 import tech.overturn.crowmail.models.Account;
 import tech.overturn.crowmail.models.AccountData;
 
-public class AccountAdapter extends ArrayAdapter {
+public class AccountAdapter extends ArrayAdapter<AccountData> {
     Context context;
     int layoutId;
-    AccountData adarray[];
+    List<AccountData> adarray;
 
-    public AccountAdapter(Context context, int layoutId, AccountData[] adarray) {
+    public AccountAdapter(Context context, int layoutId, List<AccountData> adarray) {
         super(context, layoutId, adarray);
         this.context = context;
         this.layoutId = layoutId;
@@ -25,10 +27,10 @@ public class AccountAdapter extends ArrayAdapter {
 
     @Override
     public long getItemId(int position) {
-        if (adarray[position] ==  null) {
+        if (adarray.get(position) ==  null) {
             return 0;
         }
-        return adarray[position]._id;
+        return adarray.get(position)._id;
     }
 
     @Override
@@ -43,13 +45,13 @@ public class AccountAdapter extends ArrayAdapter {
         }else{
             cont = (AccountCont)row.getTag();
         }
-        cont.name.setText(adarray[position].imapHost);
+        cont.name.setText(adarray.get(position).imapHost);
         return row;
     }
 
     @Override
     public int getCount() {
-        return adarray.length;
+        return adarray.size();
     }
 
     public static class AccountCont {

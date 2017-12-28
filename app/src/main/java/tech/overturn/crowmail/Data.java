@@ -1,5 +1,6 @@
 package tech.overturn.crowmail;
 
-public class Data {
-    public Long _id;
+public abstract class Data {
+    public abstract Integer getId();
+    public abstract void setId(Integer id);
 }

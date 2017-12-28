@@ -28,12 +28,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         dbh = new DBHelper(getBaseContext());
-        List<AccountData> acdata = (List<AccountData>) Orm.byQuery(dbh.getReadableDatabase(), Account.tableName, AccountData.class, null, null);
-        AccountData[] aarray = acdata.toArray(new AccountData[acdata.size()]);
-        Log.e("fcrow", String.format("------ acdata size %d", acdata.size()));
-
         lview = (ListView) findViewById(R.id.accountList);
-        lview.setAdapter(new AccountAdapter(this, R.layout.account_row, aarray));
         lview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -49,6 +44,23 @@ public class MainActivity extends AppCompatActivity {
                 goToAccount(0);
             }
         });
+    }
+
+    @Override
+    public void onResume(){
+        super.onResume();
+        List<AccountData> addata = (List<AccountData>) Orm.byQuery(dbh.getReadableDatabase(), Account.tableName, AccountData.class, null, null);
+
+        lview = (ListView) findViewById(R.id.accountList);
+        AccountAdapter adapter = (AccountAdapter)lview.getAdapter();
+
+        if(adapter == null) {
+            lview.setAdapter(new AccountAdapter(this, R.layout.account_row, addata));
+        } else {
+            adapter.clear();
+            adapter.addAll(addata);
+            adapter.notifyDataSetChanged();
+        }
     }
 
     public void goToAccount(long id) {

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import static java.lang.Math.toIntExact;
 
 
 public class Orm {
@@ -39,7 +40,8 @@ public class Orm {
         for (int i = 0; i < fields.length; i++) {
             try {
                 Field f = fields[i];
-                idx = colsList.indexOf(f.getName());
+                String name = f.getName();
+                idx = colsList.indexOf(name);
                 if (idx == -1) {
                     continue;
                 }
@@ -89,17 +91,18 @@ public class Orm {
             }
             try {
                 Object value = f.get(obj);
-                if(className.equals(f.getDeclaringClass().getName()) && value != null) {
-                    Log.d("fcrow", String.format("------------>%s---%s vs %s", f.getName(), className, f.getDeclaringClass().getName()));
+                String declaring = f.getDeclaringClass().getName();
+                if(className.equals(declaring) && value != null) {
                     vals.put(f.getName(), value.toString());
                 }
             } catch (IllegalAccessException e){
                 // TODO: handle this better
             }
         }
-        String[] idstr = { String.format("%d", obj._id)};
         if (vals.size() > 0) {
-            db.update(table, vals, "_id = ?", idstr);
+            String where = String.format("_id=%d", obj.getId());
+            int res = db.update(table, vals, where, null);
+            Log.d("fcrow", String.format("--- update res:%d '%s'", res, where));
         }
     }
 
@@ -130,7 +133,7 @@ public class Orm {
             }
         }
         if (vals.size() > 0) {
-            obj._id = db.insertOrThrow(table, null, vals);
+            obj.setId(toIntExact(db.insertOrThrow(table, null, vals)));
         }
     }
 
@@ -226,6 +229,9 @@ public class Orm {
             Field f = fields[i];
             String name = f.getName();
             String value = null;
+            if (name.equals("_id")) {
+                continue;
+            }
             Class type = f.getType();
             View v = ui.get(name);
             if (v != null) {
