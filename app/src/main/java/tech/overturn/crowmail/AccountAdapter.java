@@ -24,6 +24,14 @@ public class AccountAdapter extends ArrayAdapter {
     }
 
     @Override
+    public long getItemId(int position) {
+        if (adarray[position] ==  null) {
+            return 0;
+        }
+        return adarray[position]._id;
+    }
+
+    @Override
     public View getView(int position, View row, ViewGroup parent) {
         AccountCont cont = null;
         if(row == null) {

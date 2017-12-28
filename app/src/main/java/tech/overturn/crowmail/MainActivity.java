@@ -5,6 +5,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -19,7 +20,7 @@ import tech.overturn.crowmail.models.AccountData;
 public class MainActivity extends AppCompatActivity {
 
     DBHelper dbh;
-
+    ListView lview;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -30,7 +31,13 @@ public class MainActivity extends AppCompatActivity {
         AccountData[] aarray = acdata.toArray(new AccountData[acdata.size()]);
         Log.e("fcrow", String.format("------ acdata size %d", acdata.size()));
 
-        ListView lview = (ListView) findViewById(R.id.accountList);
+        lview = (ListView) findViewById(R.id.accountList);
         lview.setAdapter(new AccountAdapter(this, R.layout.account_row, aarray));
+        lview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Log.e("fcrow", String.format("-------------id %d", id));
+            }
+        });
     }
 }

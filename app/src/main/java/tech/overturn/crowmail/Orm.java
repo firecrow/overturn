@@ -84,7 +84,7 @@ public class Orm {
         Field fields[] = obj.getClass().getFields();
         for (int i = 0; i < fields.length; i++) {
             Field f = fields[i];
-            if (f.getName().equals("serialVersionUID")) {
+            if (f.getName().equals("_id") || f.getName().equals("serialVersionUID")) {
                 continue;
             }
             try {
@@ -136,7 +136,7 @@ public class Orm {
 
     public static String[] getSelectColumns(Class<? extends Data> cls) {
         Field[] fields =  cls.getFields();
-        String[] cols = new String[fields.length];
+        String[] cols = new String[fields.length+1];
         for(int i = 0; i < fields.length; i++) {
             if (fields[i].getName().equals("serialVersionUID")) {
                 continue;
@@ -181,6 +181,39 @@ public class Orm {
         }
         cursor.close();
         return objs;
+    }
+
+    public static void fillUI(Data obj, Map<String, View> ui) {
+        Field[] fields =  obj.getClass().getFields();
+        for (int i = 0; i < fields.length; i++) {
+            Field f = fields[i];
+            String name = f.getName();
+            String value = null;
+            Class type = f.getType();
+            View v = ui.get(name);
+            if (v != null) {
+                try {
+                    value  = f.get(obj).toString();
+                    if (v instanceof EditText) {
+                        ((EditText) v).setText(value);
+                    } else if (v instanceof Spinner) {
+                        value = ((Spinner) v).getSelectedItem().toString();
+                    } else if (v instanceof RadioGroup) {
+                        RadioGroup rdg = (RadioGroup)v;
+                        RadioButton btn;
+                        int length = rdg.getChildCount();
+                        for (int j = 0; j < length; j++) {
+                            btn = (RadioButton) rdg.getChildAt(j);
+                            if (btn.getText().equals(value)) {
+                                btn.setChecked(true);
+                            }
+                        }
+                    }
+                }catch(IllegalAccessException e){
+                    // TODO: figure out what to do
+                }
+            }
+        }
     }
 
     public static void backfillFromUI(Data obj, Map<String, View> ui) {
