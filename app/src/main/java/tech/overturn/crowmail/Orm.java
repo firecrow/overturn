@@ -24,7 +24,7 @@ import java.util.Map;
 
 public class Orm {
 
-    public static Data objFromCursor(Cursor cursor, String[] cols, Class<Data> cls) {
+    public static Data objFromCursor(Cursor cursor, String[] cols, Class<? extends Data> cls) {
         Data obj = null;
         try {
             obj = cls.newInstance();
@@ -39,7 +39,7 @@ public class Orm {
         for (int i = 0; i < fields.length; i++) {
             try {
                 Field f = fields[i];
-                idx = colsList.indexOf(f.getName().toLowerCase());
+                idx = colsList.indexOf(f.getName());
                 if (idx == -1) {
                     continue;
                 }
@@ -134,10 +134,13 @@ public class Orm {
         }
     }
 
-    public static String[] getSelectColumns(Class<Data> cls) {
+    public static String[] getSelectColumns(Class<? extends Data> cls) {
         Field[] fields =  cls.getFields();
         String[] cols = new String[fields.length];
         for(int i = 0; i < fields.length; i++) {
+            if (fields[i].getName().equals("serialVersionUID")) {
+                continue;
+            }
             cols[i] = fields[i].getName();
         }
         return cols;
@@ -161,11 +164,11 @@ public class Orm {
         return obj;
     }
 
-    public static List<Data> byQuery(SQLiteDatabase db, Class<Data> cls, String where, String order) {
+    public static List<? extends Data> byQuery(SQLiteDatabase db, String table, Class<? extends Data> cls, String where, String order) {
         String[] cols = getSelectColumns(cls);
         List<Data> objs = new ArrayList<Data>();
         Cursor cursor = db.query(
-                cls.getSimpleName().toLowerCase(),
+                table,
                 cols,
                 null,
                 null,
