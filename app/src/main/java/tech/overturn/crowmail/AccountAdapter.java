@@ -45,7 +45,7 @@ public class AccountAdapter extends ArrayAdapter<AccountData> {
         }else{
             cont = (AccountCont)row.getTag();
         }
-        cont.name.setText(adarray.get(position).imapHost);
+        cont.name.setText(adarray.get(position).user);
         return row;
     }
 
