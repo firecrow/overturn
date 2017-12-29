@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 
 import tech.overturn.crowmail.models.Account;
 import tech.overturn.crowmail.models.AccountData;
@@ -32,12 +33,21 @@ public class AccountActivity extends AppCompatActivity {
         }
         setUpUI();
         Orm.fillUI(a.data, a.ui);
-        Button btn = (Button)findViewById(R.id.accountSave);
-        btn.setOnClickListener(new View.OnClickListener() {
+        Button btn = (Button)findViewById(R.id.accountDone);
+        TextView blink = (TextView)findViewById(R.id.backLink);
+        View.OnClickListener back = new View.OnClickListener() {
             public void onClick(View v) {
-                save();
+                goToMain();
             }
-        });
+        };
+        btn.setOnClickListener(back);
+        blink.setOnClickListener(back);
+    }
+
+    @Override
+    public void onPause(){
+        super.onPause();
+        save();
     }
 
     public void setUpUI() {
@@ -56,5 +66,9 @@ public class AccountActivity extends AppCompatActivity {
         } else {
             Orm.insert(db, Account.tableName, a.data);
         }
+    }
+
+    public void goToMain() {
+        startActivity(new Intent(this, MainActivity.class));
     }
 }
