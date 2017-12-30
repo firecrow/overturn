@@ -4,6 +4,8 @@ import tech.overturn.crowmail.Data;
 
 public class AccountData extends Data {
     public Integer _id;
+    public String name;
+    public String email;
     public String user;
     public String password;
     public String smtpHost;

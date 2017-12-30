@@ -35,13 +35,22 @@ public class AccountActivity extends AppCompatActivity {
         Orm.fillUI(a.data, a.ui);
         Button btn = (Button)findViewById(R.id.accountDone);
         TextView blink = (TextView)findViewById(R.id.backLink);
+        TextView slink = (TextView)findViewById(R.id.sendLink);
         View.OnClickListener back = new View.OnClickListener() {
             public void onClick(View v) {
                 goToMain();
             }
         };
+        View.OnClickListener send = new View.OnClickListener() {
+            public void onClick(View v) {
+                goToSend(a.data._id);
+            }
+        };
         btn.setOnClickListener(back);
         blink.setOnClickListener(back);
+        slink.setOnClickListener(send);
+
+
     }
 
     @Override
@@ -51,6 +60,8 @@ public class AccountActivity extends AppCompatActivity {
     }
 
     public void setUpUI() {
+        a.setUI("email", (View) findViewById(R.id.email));
+        a.setUI("name", (View) findViewById(R.id.name));
         a.setUI("user", (View) findViewById(R.id.user));
         a.setUI("password", (View) findViewById(R.id.password));
         a.setUI("imapHost", (View) findViewById(R.id.imapHost));
@@ -75,5 +86,10 @@ public class AccountActivity extends AppCompatActivity {
 
     public void goToMain() {
         startActivity(new Intent(this, MainActivity.class));
+    }
+    public void goToSend(long id) {
+        Intent intent = new Intent(this, SendActivity.class);
+        intent.putExtra("account_id", id);
+        startActivity(intent);
     }
 }

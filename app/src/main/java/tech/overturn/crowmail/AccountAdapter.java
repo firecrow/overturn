@@ -45,7 +45,7 @@ public class AccountAdapter extends ArrayAdapter<AccountData> {
         }else{
             cont = (AccountCont)row.getTag();
         }
-        cont.name.setText(adarray.get(position).user);
+        cont.name.setText(adarray.get(position).email);
         return row;
     }
 
