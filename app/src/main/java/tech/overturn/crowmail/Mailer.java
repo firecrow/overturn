@@ -1,5 +1,7 @@
 package tech.overturn.crowmail;
 
+import android.util.Log;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,8 +50,10 @@ public class Mailer extends javax.mail.Authenticator {
             mime.setDataHandler(handler);
             mime.setRecipients(Message.RecipientType.TO, msg.to.toArray(new InternetAddress[msg.to.size()]));
             Transport.send(mime);
+            Log.d("fcrow", "------------ just sent email -----");
         } catch(Exception e) {
             // TODO: figure out how to handle this
+            Log.d("fcrow","------ error in Mailer.send ---"+e.getMessage(), e);
         }
     }
 
