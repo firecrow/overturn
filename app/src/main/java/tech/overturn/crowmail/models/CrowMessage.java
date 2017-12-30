@@ -62,10 +62,10 @@ public class CrowMessage extends ModelBase {
     public Integer genEmailId(SQLiteDatabase db, InternetAddress address) {
         String sql = "select * from email where email = ?";
         String args[] = new String[]{address.getAddress()};
-        List<? extends Data> results = Orm.byQueryRaw(db, CrowMessageData.class, sql, args);
+        List<? extends Data> results = Orm.byQueryRaw(db, Email.class, sql, args);
         Integer email_id;
         if(results.size() > 0) {
-            email_id = ((CrowMessageData)results.get(0))._id;
+            email_id = ((Email)results.get(0))._id;
         } else {
             Email email = new Email();
             email.name = address.getPersonal();
