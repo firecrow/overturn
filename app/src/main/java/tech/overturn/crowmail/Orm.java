@@ -57,9 +57,8 @@ public class Orm {
         return obj;
     }
 
-    public static String getCreateTable(Class cls) {
+    public static String getCreateTable(String table, Class cls) {
         String query = "";
-        String table = cls.getSimpleName().toLowerCase();
         query += "CREATE TABLE "+table +" ( ";
         query += "_id INTEGER PRIMARY KEY AUTOINCREMENT";
         Field fields[] = cls.getFields();
@@ -183,6 +182,17 @@ public class Orm {
                 null,
                 null
         );
+        while(cursor.moveToNext()) {
+            objs.add(objFromCursor(cursor, cols, cls));
+        }
+        cursor.close();
+        return objs;
+    }
+
+    public static List<? extends Data> byQueryRaw(SQLiteDatabase db, Class<? extends Data> cls, String qry, String[] args) {
+        String[] cols = getSelectColumns(cls);
+        List<Data> objs = new ArrayList<Data>();
+        Cursor cursor = db.rawQuery(qry, args);
         while(cursor.moveToNext()) {
             objs.add(objFromCursor(cursor, cols, cls));
         }

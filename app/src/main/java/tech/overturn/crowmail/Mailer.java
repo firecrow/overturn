@@ -42,6 +42,7 @@ public class Mailer extends javax.mail.Authenticator {
     }
 
     public void send(CrowMessage msg){
+        /*
         try {
             MimeMessage mime = new MimeMessage(session);
             DataHandler handler = new DataHandler(new Handler(msg.bodyText.getBytes()));
@@ -55,6 +56,7 @@ public class Mailer extends javax.mail.Authenticator {
             // TODO: figure out how to handle this
             Log.d("fcrow","------ error in Mailer.send ---"+e.getMessage(), e);
         }
+        */
     }
 
     protected PasswordAuthentication getPasswordAuthentication() {

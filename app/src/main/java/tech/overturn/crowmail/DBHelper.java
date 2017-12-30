@@ -6,9 +6,12 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
 import tech.overturn.crowmail.models.Account;
+import tech.overturn.crowmail.models.AccountData;
+import tech.overturn.crowmail.models.CrowMessage;
+import tech.overturn.crowmail.models.CrowMessageData;
 
 public class DBHelper extends SQLiteOpenHelper {
-    public static final int DB_VERSION = 1;
+    public static final int DB_VERSION = 3;
     public static final String DB_FNAME = "Crowmail.db";
 
     DBHelper(Context ctx) {
@@ -17,10 +20,13 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     public void onCreate(SQLiteDatabase db) {
-        db.execSQL(Orm.getCreateTable(Account.class));
+        db.execSQL(Orm.getCreateTable(Account.tableName, AccountData.class));
+        db.execSQL(Orm.getCreateTable(CrowMessage.tableName, CrowMessageData.class));
     }
 
-    public void onUpgrade(SQLiteDatabase db, int old, int version) {}
+    public void onUpgrade(SQLiteDatabase db, int old, int version) {
+        db.execSQL(Orm.getCreateTable(CrowMessage.tableName, CrowMessageData.class));
+    }
 
     public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         onUpgrade(db, oldVersion, newVersion);
