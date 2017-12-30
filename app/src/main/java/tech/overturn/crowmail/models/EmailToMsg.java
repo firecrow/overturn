@@ -13,6 +13,6 @@ public class EmailToMsg extends Data {
     }
 
     public void setId(Integer id) {
-
+        this._id = id;
     }
 }

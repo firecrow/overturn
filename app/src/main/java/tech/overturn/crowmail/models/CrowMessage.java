@@ -38,9 +38,9 @@ public class CrowMessage extends ModelBase {
         saveAddresses(Message.RecipientType.TO,to);
         saveAddresses(Message.RecipientType.CC, cc);
         saveAddresses(Message.RecipientType.BCC, bcc);
-        data.fromEmailId = genEmailId(this.from);
         data.returnPathEmailId = genEmailId(this.returnPath);
         */
+        data.fromEmailId = genEmailId(db, this.from);
         if(data._id != null) {
             Orm.update(db, tableName, data);
         } else {
@@ -60,8 +60,6 @@ public class CrowMessage extends ModelBase {
     }
 
     public Integer genEmailId(SQLiteDatabase db, InternetAddress address) {
-        return 0;
-        /*
         String sql = "select * from email where email = ?";
         String args[] = new String[]{address.getAddress()};
         List<? extends Data> results = Orm.byQueryRaw(db, CrowMessageData.class, sql, args);
@@ -69,9 +67,12 @@ public class CrowMessage extends ModelBase {
         if(results.size() > 0) {
             email_id = ((CrowMessageData)results.get(0))._id;
         } else {
-            email_id = Orm.insert(db, "message", CrowMessageData);
+            Email email = new Email();
+            email.name = address.getPersonal();
+            email.email = address.getAddress();
+            Orm.insert(db, Email.tableName, email);
+            email_id = email._id;
         }
         return email_id;
-        */
     }
 }

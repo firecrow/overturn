@@ -1,6 +1,7 @@
 package tech.overturn.crowmail;
 
 import android.content.Intent;
+import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -49,10 +50,12 @@ public class SendActivity extends AppCompatActivity {
         CrowMessage cmsg = new CrowMessage();
         try {
             String toText = ((EditText) findViewById(R.id.sendTo)).getText().toString();
+            cmsg.from = new InternetAddress(a.data.email);
             cmsg.to = InternetAddress.parse(toText);
             cmsg.data.subject = ((EditText) findViewById(R.id.sendSubject)).getText().toString();
             cmsg.data.bodyText = ((EditText) findViewById(R.id.sendBody)).getText().toString();
-            cmsg.save(dbh.getWritableDatabase());
+            SQLiteDatabase db = dbh.getWritableDatabase();
+            cmsg.save(db);
         } catch(Exception e) {
             // TODO: HANDLE THESE THINGS
             Log.d("fcrow","------ error in sendActivity.send ---"+e.getMessage(), e);

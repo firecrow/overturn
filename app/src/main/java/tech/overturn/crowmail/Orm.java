@@ -85,7 +85,7 @@ public class Orm {
         Field fields[] = obj.getClass().getFields();
         for (int i = 0; i < fields.length; i++) {
             Field f = fields[i];
-            if (f.getName().equals("_id") || f.getName().equals("serialVersionUID")) {
+            if (Modifier.isStatic(f.getModifiers()) || f.getName().equals("_id") || f.getName().equals("serialVersionUID")) {
                 continue;
             }
             try {
@@ -112,7 +112,7 @@ public class Orm {
             String fname = fields[i].getName();
             Field f = fields[i];
             try {
-                if(fname != "_id" && fname != "serialVersionUID" && f.get(obj) != null) {
+                if(!Modifier.isStatic(f.getModifiers()) && fname != "_id" && fname != "serialVersionUID" && f.get(obj) != null) {
                     if(f.getType() == Integer.class) {
                         Integer value = (Integer) f.get(obj);
                         if(value != null) {
@@ -140,7 +140,7 @@ public class Orm {
         Field[] fields =  cls.getFields();
         String[] cols = new String[fields.length+1];
         for(int i = 0; i < fields.length; i++) {
-            if (fields[i].getName().equals("serialVersionUID")) {
+            if (Modifier.isStatic(fields[i].getModifiers()) || fields[i].getName().equals("serialVersionUID")) {
                 continue;
             }
             cols[i] = fields[i].getName();
