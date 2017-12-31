@@ -35,9 +35,6 @@ public class CrowMessage extends ModelBase {
 
     public void save(SQLiteDatabase db){
         /*
-        saveAddresses(Message.RecipientType.TO,to);
-        saveAddresses(Message.RecipientType.CC, cc);
-        saveAddresses(Message.RecipientType.BCC, bcc);
         data.returnPathEmailId = genEmailId(this.returnPath);
         */
         data.fromEmailId = genEmailId(db, this.from);
@@ -46,6 +43,9 @@ public class CrowMessage extends ModelBase {
         } else {
             Orm.insert(db, tableName, data);
         }
+        saveAddresses(db, Message.RecipientType.TO, to);
+        saveAddresses(db, Message.RecipientType.CC, cc);
+        saveAddresses(db, Message.RecipientType.BCC, bcc);
     }
 
     public void saveAddresses(SQLiteDatabase db, Message.RecipientType type, InternetAddress[] addrs) {
@@ -55,7 +55,7 @@ public class CrowMessage extends ModelBase {
             m2m.email_id = email_id;
             m2m.message_id = this.data._id;
             m2m.type = type.toString();
-            Orm.insert(db, "emailtomessage", m2m);
+            Orm.insert(db, EmailToMsg.tableName, m2m);
         }
     }
 

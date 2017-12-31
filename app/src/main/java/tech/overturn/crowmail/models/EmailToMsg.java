@@ -3,6 +3,7 @@ package tech.overturn.crowmail.models;
 import tech.overturn.crowmail.Data;
 
 public class EmailToMsg extends Data {
+    public static String tableName = "emailtomessage";
     Integer _id;
     String type;
     Integer email_id;
