@@ -10,8 +10,6 @@ import tech.overturn.crowmail.ModelBase;
 public class CrowMessageData extends Data {
     public Integer _id;
     public String messageId;
-    public Integer fromEmailId;
-    public Integer returnPathEmailId;
     public Timestamp timestamp;
     public String subject;
     public String bodyText;

@@ -189,8 +189,7 @@ public class Orm {
         return objs;
     }
 
-    public static List<? extends Data> byQueryRaw(SQLiteDatabase db, Class<? extends Data> cls, String qry, String[] args) {
-        String[] cols = getSelectColumns(cls);
+    public static List<? extends Data> byQueryRaw(SQLiteDatabase db, Class<? extends Data> cls, String[] cols, String qry, String[] args) {
         List<Data> objs = new ArrayList<Data>();
         Cursor cursor = db.rawQuery(qry, args);
         while(cursor.moveToNext()) {

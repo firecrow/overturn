@@ -47,15 +47,14 @@ public class SendActivity extends AppCompatActivity {
 
     public void send() {
         Log.d("fcrow", "---- in send in sendActivity");
-        CrowMessage cmsg = new CrowMessage();
+        CrowMessage cmsg = new CrowMessage(dbh.getWritableDatabase());
         try {
             String toText = ((EditText) findViewById(R.id.sendTo)).getText().toString();
             cmsg.from = new InternetAddress(a.data.email);
             cmsg.to = InternetAddress.parse(toText);
             cmsg.data.subject = ((EditText) findViewById(R.id.sendSubject)).getText().toString();
             cmsg.data.bodyText = ((EditText) findViewById(R.id.sendBody)).getText().toString();
-            SQLiteDatabase db = dbh.getWritableDatabase();
-            cmsg.save(db);
+            cmsg.save();
         } catch(Exception e) {
             // TODO: HANDLE THESE THINGS
             Log.d("fcrow","------ error in sendActivity.send ---"+e.getMessage(), e);

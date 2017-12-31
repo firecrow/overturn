@@ -1,10 +1,12 @@
 package tech.overturn.crowmail.models;
 
 import android.database.sqlite.SQLiteDatabase;
+import android.util.Log;
 
 import com.sun.mail.iap.ByteArray;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +18,7 @@ import javax.mail.internet.InternetAddress;
 import tech.overturn.crowmail.Data;
 import tech.overturn.crowmail.ModelBase;
 import tech.overturn.crowmail.Orm;
+import tech.overturn.crowmail.struct.EmailWithType;
 
 public class CrowMessage extends ModelBase {
     public static String tableName = "message";
@@ -28,41 +31,76 @@ public class CrowMessage extends ModelBase {
     public List<ByteArray> attachments;
     public InternetAddress from;
 
-    public CrowMessage() {
+    SQLiteDatabase db;
+
+    public CrowMessage(SQLiteDatabase db) {
+        this.db = db;
         this.data = new CrowMessageData();
-        //this.loadAddresses();
+        this.loadAddresses();
     }
 
-    public void save(SQLiteDatabase db){
-        /*
-        data.returnPathEmailId = genEmailId(this.returnPath);
-        */
-        data.fromEmailId = genEmailId(db, this.from);
+    public void loadAddresses(){
+        try {
+            String qry = "select e.name, e.email, m2m.type "
+                    + "from email e join emailtomessage m2m on e._id = m2m.email_id "
+                    + "join message m on m._id = m2m.message_id where m._id = ?";
+            String[] cols = {"name", "email", "type"};
+            String[] args = {data._id.toString()};
+            List<EmailWithType> emails = (List<EmailWithType>) Orm.byQueryRaw(db, EmailWithType.class, cols, qry, args);
+            List<InternetAddress> to = new ArrayList<InternetAddress>();
+            List<InternetAddress> cc = new ArrayList<InternetAddress>();
+            List<InternetAddress> bcc = new ArrayList<InternetAddress>();
+            for (EmailWithType e : emails) {
+                if (e.type.equals("TO")) {
+                    to.add(new InternetAddress(e.email, e.name));
+                } else if (e.type.equals("CC")) {
+                    cc.add(new InternetAddress(e.email, e.name));
+                } else if (e.type.equals("BCC")) {
+                    bcc.add(new InternetAddress(e.email, e.name));
+                } else if (e.type.equals("FROM")) {
+                    this.from = new InternetAddress(e.email, e.name);
+                }
+            }
+            this.to = to.toArray(new InternetAddress[to.size()]);
+            this.cc = cc.toArray(new InternetAddress[cc.size()]);
+            this.bcc = bcc.toArray(new InternetAddress[bcc.size()]);
+        } catch(Exception e){
+            Log.e("fcrow", "-------------------- error in loadAddresses:" + e.getMessage(), e);
+        }
+    }
+
+    public void save(){
         if(data._id != null) {
             Orm.update(db, tableName, data);
         } else {
             Orm.insert(db, tableName, data);
         }
-        saveAddresses(db, Message.RecipientType.TO, to);
-        saveAddresses(db, Message.RecipientType.CC, cc);
-        saveAddresses(db, Message.RecipientType.BCC, bcc);
+        saveAddress("FROM", from);
+        //saveAddress("FROM", returnPath);
+        saveAddresses("TO", to);
+        saveAddresses("CC", cc);
+        saveAddresses("BCC", bcc);
     }
 
-    public void saveAddresses(SQLiteDatabase db, Message.RecipientType type, InternetAddress[] addrs) {
+    public void saveAddresses(String type, InternetAddress[] addrs) {
         for(int i = 0; i < addrs.length; i++){
-            Integer email_id = genEmailId(db, addrs[i]);
-            EmailToMsg m2m = new EmailToMsg();
-            m2m.email_id = email_id;
-            m2m.message_id = this.data._id;
-            m2m.type = type.toString();
-            Orm.insert(db, EmailToMsg.tableName, m2m);
+            saveAddress(type, addrs[i]);
         }
     }
 
-    public Integer genEmailId(SQLiteDatabase db, InternetAddress address) {
-        String sql = "select * from email where email = ?";
+    public void saveAddress(String type, InternetAddress addr) {
+        Integer email_id = genEmailId(addr);
+        EmailToMsg m2m = new EmailToMsg();
+        m2m.email_id = email_id;
+        m2m.message_id = this.data._id;
+        m2m.type = type;
+        Orm.insert(db, EmailToMsg.tableName, m2m);
+    }
+
+    public Integer genEmailId(InternetAddress address) {
+        String sql = "select _id from email where email = ?";
         String args[] = new String[]{address.getAddress()};
-        List<? extends Data> results = Orm.byQueryRaw(db, Email.class, sql, args);
+        List<? extends Data> results = Orm.byQueryRaw(db, Email.class, new String[]{"_id"}, sql, args);
         Integer email_id;
         if(results.size() > 0) {
             email_id = ((Email)results.get(0))._id;
