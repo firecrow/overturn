@@ -40,7 +40,7 @@ public class SendActivity extends AppCompatActivity {
         Button backBtn = (Button) findViewById(R.id.backSendBtn);
         backBtn.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                goToActivity();
+                goToAccount();
             }
         });
     }
@@ -65,9 +65,9 @@ public class SendActivity extends AppCompatActivity {
         m.send(cmsg);
     }
 
-    public void goToActivity() {
+    public void goToAccount() {
         Intent intent = new Intent(this, AccountActivity.class);
-        intent.putExtra("account_id", a.data._id);
+        intent.putExtra("account_id", new Long(a.data._id).longValue());
         startActivity(intent);
     }
 }
