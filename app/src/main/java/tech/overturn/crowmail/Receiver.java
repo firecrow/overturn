@@ -15,7 +15,6 @@ public class Receiver extends BroadcastReceiver {
     @Override
     public void onReceive(final Context context, Intent intent) {
         Log.d("fcrow", "--------------- hi from reciever");
-        SystemClock.sleep(1000);
         new Handler().post(new Runnable(){
             @Override
             public void run(){
