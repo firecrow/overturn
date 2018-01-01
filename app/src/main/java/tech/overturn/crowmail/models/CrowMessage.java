@@ -36,7 +36,9 @@ public class CrowMessage extends ModelBase {
     public CrowMessage(SQLiteDatabase db) {
         this.db = db;
         this.data = new CrowMessageData();
-        this.loadAddresses();
+        if(this.data._id != null){
+            this.loadAddresses();
+        }
     }
 
     public void loadAddresses(){
@@ -77,9 +79,15 @@ public class CrowMessage extends ModelBase {
         }
         saveAddress("FROM", from);
         //saveAddress("FROM", returnPath);
-        saveAddresses("TO", to);
-        saveAddresses("CC", cc);
-        saveAddresses("BCC", bcc);
+        if(to != null) {
+            saveAddresses("TO", to);
+        }
+        if(cc != null) {
+            saveAddresses("CC", cc);
+        }
+        if(bcc != null) {
+            saveAddresses("BCC", bcc);
+        }
     }
 
     public void saveAddresses(String type, InternetAddress[] addrs) {

@@ -49,12 +49,16 @@ public class SendActivity extends AppCompatActivity {
         Log.d("fcrow", "---- in send in sendActivity");
         CrowMessage cmsg = new CrowMessage(dbh.getWritableDatabase());
         try {
-            String toText = ((EditText) findViewById(R.id.sendTo)).getText().toString();
             cmsg.from = new InternetAddress(a.data.email);
+            String toText = ((EditText) findViewById(R.id.sendTo)).getText().toString();
             cmsg.to = InternetAddress.parse(toText);
             cmsg.data.subject = ((EditText) findViewById(R.id.sendSubject)).getText().toString();
             cmsg.data.bodyText = ((EditText) findViewById(R.id.sendBody)).getText().toString();
             cmsg.save();
+
+            Intent queueItem = new Intent(getApplicationContext(), Queue.class);
+            queueItem.putExtra("message_id", new Long(cmsg.data._id).longValue());
+            startService(queueItem);
         } catch(Exception e) {
             // TODO: HANDLE THESE THINGS
             Log.d("fcrow","------ error in sendActivity.send ---"+e.getMessage(), e);
