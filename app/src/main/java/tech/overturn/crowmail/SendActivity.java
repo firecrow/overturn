@@ -1,7 +1,10 @@
 package tech.overturn.crowmail;
 
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.Handler;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -43,6 +46,9 @@ public class SendActivity extends AppCompatActivity {
                 goToAccount();
             }
         });
+
+        IntentFilter filter = new IntentFilter(Queue.SEND_ACTION);
+        LocalBroadcastManager.getInstance(this).registerReceiver(new Receiver(), filter);
     }
 
     public void send() {
