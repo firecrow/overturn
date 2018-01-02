@@ -63,7 +63,9 @@ public class SendActivity extends AppCompatActivity {
             cmsg.save();
 
             Intent queueItem = new Intent(getApplicationContext(), Queue.class);
+            queueItem.setAction(Queue.TRIGGER_SEND);
             queueItem.putExtra("message_id", new Long(cmsg.data._id).longValue());
+            Log.e("fcrow", "---------------------- about to send intent");
             startService(queueItem);
         } catch(Exception e) {
             // TODO: HANDLE THESE THINGS
