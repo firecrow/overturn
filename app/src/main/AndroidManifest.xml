@@ -20,6 +20,7 @@
         <activity android:name=".SendActivity"></activity>
         <service
             android:name=".Queue"
+            android:enabled="true"
             android:exported="false" />
     </application>
 

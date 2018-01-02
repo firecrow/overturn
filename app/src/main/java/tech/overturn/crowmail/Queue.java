@@ -1,6 +1,7 @@
 package tech.overturn.crowmail;
 
 import android.app.IntentService;
+import android.app.Service;
 import android.content.Intent;
 import android.os.SystemClock;
 import android.support.v4.content.LocalBroadcastManager;
@@ -14,6 +15,12 @@ public class Queue extends IntentService {
 
     public Queue() {
         super("CrowQueue");
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId){
+        super.onStartCommand(intent, flags, startId);
+        return Service.START_STICKY;
     }
 
     @Override
