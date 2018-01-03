@@ -36,9 +36,13 @@ public class CrowMessage extends ModelBase {
     public CrowMessage(SQLiteDatabase db) {
         this.db = db;
         this.data = new CrowMessageData();
-        if(this.data._id != null){
-            this.loadAddresses();
-        }
+    }
+
+    public static CrowMessage byId(SQLiteDatabase db, Integer id) {
+        CrowMessage msg = new CrowMessage(db);
+        msg.data = (CrowMessageData) Orm.byId(db, CrowMessage.tableName, CrowMessageData.class, id);
+        msg.loadAddresses();
+        return msg;
     }
 
     public void loadAddresses(){

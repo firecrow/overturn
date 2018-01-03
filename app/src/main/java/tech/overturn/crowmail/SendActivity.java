@@ -64,6 +64,7 @@ public class SendActivity extends AppCompatActivity {
 
             Intent queueItem = new Intent(getApplicationContext(), Queue.class);
             queueItem.setAction(Queue.TRIGGER_SEND);
+            queueItem.putExtra("account_id", new Long(a.data._id).longValue());
             queueItem.putExtra("message_id", new Long(cmsg.data._id).longValue());
             Log.e("fcrow", "---------------------- about to send intent");
             startService(queueItem);
@@ -72,9 +73,6 @@ public class SendActivity extends AppCompatActivity {
             Log.d("fcrow","------ error in sendActivity.send ---"+e.getMessage(), e);
             return;
         }
-
-        Mailer m = new Mailer(a);
-        m.send(cmsg);
     }
 
     public void goToAccount() {
