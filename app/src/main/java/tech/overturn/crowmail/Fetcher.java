@@ -6,6 +6,8 @@ import android.widget.Toast;
 import com.sun.mail.iap.ProtocolException;
 import com.sun.mail.imap.IMAPFolder;
 import com.sun.mail.imap.protocol.IMAPProtocol;
+import com.sun.mail.imap.protocol.Status;
+
 
 import java.util.Properties;
 
@@ -26,16 +28,7 @@ public class Fetcher {
 
     public Fetcher(Account a) {
         try {
-            a = a;
-            url = new URLName(
-                    "imaps",
-                    a.data.imapHost,
-                    a.data.imapPort,
-                    "INBOX",
-                    a.data.user,
-                    a.data.password);
-            props = System.getProperties();
-            session = Session.getInstance(props);
+            this.a = a;
             connect();
         } catch(Exception e) {
             Log.d("fcrow","------- Error in Fetcher setup "+ e.getMessage(), e);
@@ -44,26 +37,40 @@ public class Fetcher {
 
     public void connect() {
         try {
+            Properties props = System.getProperties();
+            url = new URLName(
+                    "imaps",
+                    a.data.imapHost,
+                    a.data.imapPort,
+                    "Inbox",
+                    a.data.user,
+                    a.data.password);
+            Log.d("fcrow",String.format("----------- url:%s", url));
+            props = System.getProperties();
+            session = Session.getInstance(props);
             Store store = session.getStore(url);
             store.connect();
             folder = (IMAPFolder) store.getFolder(url);
             folder.open(Folder.READ_ONLY);
+            Log.d("fcrow", String.format("------- is folder open:%b", folder.isOpen()));
         } catch(Exception e) {
             Log.d("fcrow","------- Error in Fetcher connect "+ e.getMessage(), e);
         }
     }
 
     public void loop() {
+        Log.d("fcrow","------- in loop");
+        /*
         Thread t = new Thread(new Runnable() {
-            Integer  ninemin = 1000 * 60 * 9;
+            Integer one = 1000 * 60;
             @Override
             public void run() {
                 try {
-                    Thread.sleep(ninemin);
+                    Thread.sleep(one);
                     folder.doCommand(new IMAPFolder.ProtocolCommand() {
                         public Object doCommand(IMAPProtocol p)
                                 throws ProtocolException {
-                            p.simpleCommand("NOOP", null);
+                            Status res = p.status("INBOX", new String[]{"uidnext"});
                             return null;
                         }
                     });
@@ -73,30 +80,14 @@ public class Fetcher {
             }
         });
         t.start();
+        */
 
-        while(!Thread.interrupted()){
-            Log.d("fcrow", "---- starting idle");
-            try {
-                while(true){
-                    folder.idle();
-                    manageFetch();
-                }
-            } catch(Exception e) {
-                Log.d("fcrow","------- Error in Fetcher loop "+ e.getMessage(), e);
-            }
-        }
-
-        if(t.isAlive()) {
-            t.interrupt();
-        }
-    }
-
-    public void manageFetch() {
         try {
+            Log.d("fcrow", "--------- in try");
             Integer count = folder.getMessageCount();
-            Log.d("fcrow", String.format("message received count %d", count));
+            Log.d("fcrow", String.format("-------- message received count %d", count));
         } catch(Exception e) {
-            Log.d("fcrow","------- Error in Fetcher manageFetch "+ e.getMessage(), e);
+            Log.d("fcrow", "------- Error in Fetcher loop " + e.getMessage(), e);
         }
     }
 }

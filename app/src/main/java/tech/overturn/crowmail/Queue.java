@@ -19,6 +19,7 @@ public class Queue extends Service {
     public static final String TRIGGER_SEND = "tech.overturn.crowmail.TRIGGER_SEND";
     public static final String SEND_ACTION = "tech.overturn.crowmail.SEND_ACTION";
     public static final String SEND_STATUS = "tech.overturn.crowmail.SEND_STATUS";
+    public static final String TRIGGER_FETCH = "tech.overturn.crowmail.TRIGGER_FETCH";
     public static final String COMPLETE = "complete";
 
     DBHelper dbh;
@@ -43,7 +44,7 @@ public class Queue extends Service {
             Log.d("fcrow", String.format("--------------- ACTION: %s", intent.getAction()));
             if (intent.getAction().equals(TRIGGER_SEND)) {
                 sendEmail(intent);
-            } else if (intent.getAction().equals(TRIGGER_SEND)) {
+            } else if (intent.getAction().equals(TRIGGER_FETCH)) {
                 startRecieving(intent);
             }
         };
@@ -76,17 +77,18 @@ public class Queue extends Service {
         Log.d("fcrow", String.format("--------------- in Recieve"));
         Long account_id = intent.getLongExtra("account_id", 0);
         final Account a = Account.byId(dbh.getReadableDatabase(), account_id.intValue());
-        if(recieving.get(account_id.intValue()) != null) {
-            Log.d("fcrow", String.format("--------------- already recieving"));
-        }else {
+        //if(recieving.get(account_id.intValue()) != null) {
+        //    Log.d("fcrow", String.format("--------------- already recieving"));
+        //} else {
             recieving.put(account_id.intValue(), a);
             Thread t = new Thread(new Runnable() {
                 @Override
                 public void run() {
+                    Log.d("fcrow", String.format("--------------- thread started"));
                     new Fetcher(a).loop();
                 }
             });
             t.start();
-        }
+        //}
     }
 }

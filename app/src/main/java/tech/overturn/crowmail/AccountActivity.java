@@ -36,6 +36,7 @@ public class AccountActivity extends AppCompatActivity {
         Button btn = (Button)findViewById(R.id.accountDone);
         TextView blink = (TextView)findViewById(R.id.backLink);
         TextView slink = (TextView)findViewById(R.id.sendLink);
+        TextView flink = (TextView)findViewById(R.id.fetchLink);
         View.OnClickListener back = new View.OnClickListener() {
             public void onClick(View v) {
                 goToMain();
@@ -46,11 +47,19 @@ public class AccountActivity extends AppCompatActivity {
                 goToSend(a.data._id);
             }
         };
+        View.OnClickListener fetch = new View.OnClickListener() {
+            public void onClick(View v) {
+                Intent fetchItem = new Intent(getApplicationContext(), Queue.class);
+                fetchItem.setAction(Queue.TRIGGER_FETCH);
+                fetchItem.putExtra("account_id", new Long(a.data._id).longValue());
+                Log.e("fcrow", "---------------------- about to fetch intent");
+                startService(fetchItem);
+            }
+        };
         btn.setOnClickListener(back);
         blink.setOnClickListener(back);
         slink.setOnClickListener(send);
-
-
+        flink.setOnClickListener(fetch);
     }
 
     @Override
