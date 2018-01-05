@@ -1,5 +1,7 @@
 package tech.overturn.crowmail;
 
+import android.content.Context;
+import android.os.Handler;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -25,10 +27,14 @@ public class Fetcher {
     URLName url;
     Properties props;
     Session session;
+    int FETCH_DELAY = 1000 * 60 * 1;
 
-    public Fetcher(Account a) {
+    DBHelper dbh;
+
+    public Fetcher(Context context, Account a) {
+        dbh = new DBHelper(context);
+        this.a = a;
         try {
-            this.a = a;
             connect();
         } catch(Exception e) {
             Log.d("fcrow","------- Error in Fetcher setup "+ e.getMessage(), e);
@@ -50,6 +56,7 @@ public class Fetcher {
             session = Session.getInstance(props);
             Store store = session.getStore(url);
             store.connect();
+            Log.d("fcrow", String.format("------- is connected:%b", store.isConnected()));
             folder = (IMAPFolder) store.getFolder(url);
             folder.open(Folder.READ_ONLY);
             Log.d("fcrow", String.format("------- is folder open:%b", folder.isOpen()));
@@ -59,35 +66,26 @@ public class Fetcher {
     }
 
     public void loop() {
-        Log.d("fcrow","------- in loop");
-        /*
-        Thread t = new Thread(new Runnable() {
-            Integer one = 1000 * 60;
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(one);
-                    folder.doCommand(new IMAPFolder.ProtocolCommand() {
-                        public Object doCommand(IMAPProtocol p)
-                                throws ProtocolException {
-                            Status res = p.status("INBOX", new String[]{"uidnext"});
-                            return null;
-                        }
-                    });
-                } catch(Exception e) {
-                    Log.d("fcrow","------- Error in Fetcher loop supervise "+ e.getMessage(), e);
+        Log.d("fcrow", "--------- loop");
+        while(true) {
+            try {
+                Long uidnext = (Long)folder.doCommand(new IMAPFolder.ProtocolCommand() {
+                    public Object doCommand(IMAPProtocol p)
+                            throws ProtocolException {
+                        Status status = p.status("Inbox", new String[]{"uidnext"});
+                        return status.uidnext;
+                    }
+                });
+                Log.d("fcrow", String.format("-------- next2 from cmd %d", uidnext));
+                if (a.data.uidnext != uidnext.intValue()) {
+                    Log.d("fcrow", String.format("-------- new mail"));
+                    a.data.uidnext = uidnext.intValue();
+                    a.save(dbh.getWritableDatabase());
                 }
+                Thread.sleep(15 * 1000);
+            } catch (Exception e) {
+                Log.d("fcrow", "------- Error in Fetcher loop " + e.getMessage(), e);
             }
-        });
-        t.start();
-        */
-
-        try {
-            Log.d("fcrow", "--------- in try");
-            Integer count = folder.getMessageCount();
-            Log.d("fcrow", String.format("-------- message received count %d", count));
-        } catch(Exception e) {
-            Log.d("fcrow", "------- Error in Fetcher loop " + e.getMessage(), e);
         }
     }
 }

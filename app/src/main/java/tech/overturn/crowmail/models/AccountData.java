@@ -14,6 +14,7 @@ public class AccountData extends Data {
     public String imapHost;
     public Integer imapPort;
     public String imapSslType;
+    public Integer uidnext;
 
     public Integer getId(){
         return this._id;

@@ -25,4 +25,13 @@ public class Account extends ModelBase {
         a.data = (AccountData) Orm.byId(db, Account.tableName, AccountData.class, id.intValue());
         return a;
     }
+
+    public void save(SQLiteDatabase db) {
+        if (data._id != null) {
+            Orm.update(db, Account.tableName, data);
+        } else {
+            Orm.insert(db, Account.tableName, data);
+        }
+    }
+
 }

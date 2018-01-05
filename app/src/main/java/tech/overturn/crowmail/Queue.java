@@ -84,8 +84,7 @@ public class Queue extends Service {
             Thread t = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    Log.d("fcrow", String.format("--------------- thread started"));
-                    new Fetcher(a).loop();
+                    new Fetcher(getBaseContext(), a).loop();
                 }
             });
             t.start();
