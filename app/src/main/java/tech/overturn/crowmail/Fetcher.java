@@ -14,6 +14,7 @@ import com.sun.mail.imap.protocol.Status;
 import java.util.Properties;
 
 import javax.mail.Folder;
+import javax.mail.Message;
 import javax.mail.Session;
 import javax.mail.Store;
 import javax.mail.URLName;
@@ -51,22 +52,18 @@ public class Fetcher {
                     "Inbox",
                     a.data.user,
                     a.data.password);
-            Log.d("fcrow",String.format("----------- url:%s", url));
             props = System.getProperties();
             session = Session.getInstance(props);
             Store store = session.getStore(url);
             store.connect();
-            Log.d("fcrow", String.format("------- is connected:%b", store.isConnected()));
             folder = (IMAPFolder) store.getFolder(url);
             folder.open(Folder.READ_ONLY);
-            Log.d("fcrow", String.format("------- is folder open:%b", folder.isOpen()));
         } catch(Exception e) {
             Log.d("fcrow","------- Error in Fetcher connect "+ e.getMessage(), e);
         }
     }
 
     public void loop() {
-        Log.d("fcrow", "--------- loop");
         while(true) {
             try {
                 Long uidnext = (Long)folder.doCommand(new IMAPFolder.ProtocolCommand() {
@@ -76,9 +73,12 @@ public class Fetcher {
                         return status.uidnext;
                     }
                 });
-                Log.d("fcrow", String.format("-------- next2 from cmd %d", uidnext));
+                Log.d("fcrow", String.format("-------- next %d", uidnext));
                 if (a.data.uidnext != uidnext.intValue()) {
-                    Log.d("fcrow", String.format("-------- new mail"));
+                    Message[] msgs = folder.getMessagesByUID(a.data.uidnext, uidnext-1);
+                    for(int i = 0; i < msgs.length; i++) {
+                        Log.d("fcrow", String.format("-------- new mail %s:%s", msgs[i].getFrom()[0], msgs[i].getSubject()));
+                    }
                     a.data.uidnext = uidnext.intValue();
                     a.save(dbh.getWritableDatabase());
                 }

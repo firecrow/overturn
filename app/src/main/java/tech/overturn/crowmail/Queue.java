@@ -74,12 +74,11 @@ public class Queue extends Service {
     }
 
     public void startRecieving(Intent intent) {
-        Log.d("fcrow", String.format("--------------- in Recieve"));
         Long account_id = intent.getLongExtra("account_id", 0);
         final Account a = Account.byId(dbh.getReadableDatabase(), account_id.intValue());
-        //if(recieving.get(account_id.intValue()) != null) {
-        //    Log.d("fcrow", String.format("--------------- already recieving"));
-        //} else {
+        if(recieving.get(account_id.intValue()) != null) {
+            Log.d("fcrow", String.format("--------------- already recieving"));
+        } else {
             recieving.put(account_id.intValue(), a);
             Thread t = new Thread(new Runnable() {
                 @Override
@@ -88,6 +87,6 @@ public class Queue extends Service {
                 }
             });
             t.start();
-        //}
+        }
     }
 }
