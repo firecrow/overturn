@@ -76,7 +76,6 @@ public class Fetcher {
 
     public void loop() {
         try {
-            boolean first = true;
             while(true) {
                 Long uidnext = (Long)folder.doCommand(new IMAPFolder.ProtocolCommand() {
                     public Object doCommand(IMAPProtocol p)
@@ -86,33 +85,31 @@ public class Fetcher {
                     }
                 });
                 Log.d("fcrow", String.format("-------- next %d", uidnext));
-                if (a.data.uidnext != uidnext.intValue()) {
+                Integer previous = a.data.uidnext;
+                if (previous != uidnext.intValue()) {
                     NotificationManagerCompat nmng = NotificationManagerCompat.from(context);
                     Message[] msgs = folder.getMessagesByUID(a.data.uidnext, uidnext-1);
-                    if (first) {
-                        Notification n = new Notification.Builder(context)
-                                .setSmallIcon(R.drawable.notif)
-                                .setGroupSummary(first)
-                                .setGroup("CROWMAIL")
-                                .build();
-                        nmng.notify("CROWMAIL", 0, n);
-                        first = false;
-                    }
+                    Notification sum = new Notification.Builder(context)
+                            .setSmallIcon(R.drawable.notif)
+                            .setGroupSummary(true)
+                            .setGroup("CROWMAIL")
+                            .build();
+                    nmng.notify("CROWMAIL", 0, sum);
                     for(int i = 0; i < msgs.length; i++) {
                         Log.d("fcrow", String.format("-------- new mail %s:%s", msgs[i].getFrom()[0], msgs[i].getSubject()));
                         Notification n = new Notification.Builder(context)
                                 .setContentTitle(msgs[i].getFrom()[0].toString())
                                 .setContentText(msgs[i].getSubject())
                                 .setSmallIcon(R.drawable.notif)
-                                .setGroupSummary(first)
+                                .setGroupSummary(false)
                                 .setGroup("CROWMAIL")
                                 .build();
-                        nmng.notify("CROWMAIL", uidnext.intValue()+i, n);
+                        nmng.notify("CROWMAIL", previous+i, n);
                     }
                     a.data.uidnext = uidnext.intValue();
                     a.save(dbh.getWritableDatabase());
                 }
-                Thread.sleep(15 * 1000);
+                Thread.sleep(FETCH_DELAY);
             }
         } catch (Exception e) {
             Log.d("fcrow", "------- Error in Fetcher loop " + e.getMessage(), e);
