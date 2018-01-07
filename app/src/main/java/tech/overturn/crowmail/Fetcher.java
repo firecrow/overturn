@@ -152,6 +152,7 @@ public class Fetcher {
                         Message[] msgs = folder.getMessagesByUID(a.data.uidnext, uidnext - 1);
                         Notification sum = new Notification.Builder(context)
                                 .setSmallIcon(R.drawable.notif)
+                                .setContentTitle(a.data.email)
                                 .setGroupSummary(true)
                                 .setGroup(msg_group_key)
                                 .build();
