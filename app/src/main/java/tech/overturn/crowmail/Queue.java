@@ -18,11 +18,6 @@ import tech.overturn.crowmail.models.CrowMessage;
 import tech.overturn.crowmail.models.ErrorStatus;
 
 public class Queue extends Service {
-    public static final String TRIGGER_SEND = "tech.overturn.crowmail.TRIGGER_SEND";
-    public static final String SEND_ACTION = "tech.overturn.crowmail.SEND_ACTION";
-    public static final String SEND_STATUS = "tech.overturn.crowmail.SEND_STATUS";
-    public static final String TRIGGER_FETCH = "tech.overturn.crowmail.TRIGGER_FETCH";
-    public static final String COMPLETE = "complete";
 
     DBHelper dbh;
     Map<Integer, Account> recieving;
@@ -32,8 +27,11 @@ public class Queue extends Service {
         dbh = new DBHelper(getBaseContext());
         recieving = new HashMap<Integer, Account>();
         Log.d("fcrow", "---------- service created");
-        new ErrorStatus().log(dbh.getWritableDatabase(), "service created","")
-                .sendNotify(getApplicationContext(), false);
+
+        ErrorStatus err = new ErrorStatus();
+        err.key = "service created";
+        err.log(dbh.getWritableDatabase());
+        err.sendNotify(getApplicationContext(), false);
     }
 
     @Override
@@ -47,9 +45,9 @@ public class Queue extends Service {
         final Service self = this;
         if (intent != null) {
             Log.d("fcrow", String.format("--------------- ACTION: %s", intent.getAction()));
-            if (intent.getAction().equals(TRIGGER_SEND)) {
+            if (intent.getAction().equals(Global.TRIGGER_SEND)) {
                 sendEmail(intent);
-            } else if (intent.getAction().equals(TRIGGER_FETCH)) {
+            } else if (intent.getAction().equals(Global.TRIGGER_FETCH)) {
                 startRecieving(intent);
             }
         };
@@ -61,8 +59,11 @@ public class Queue extends Service {
     public void onDestroy() {
         super.onDestroy();
         Log.d("fcrow", "---------- service destroyed");
-        new ErrorStatus().log(dbh.getWritableDatabase(), "service destroyed", "")
-                .sendNotify(getApplicationContext(), false);
+
+        ErrorStatus err = new ErrorStatus();
+        err.key = "service destroyed";
+        err.log(dbh.getWritableDatabase());
+        err.sendNotify(getApplicationContext(), false);
     }
 
     public void sendEmail(final Intent intent) {
@@ -77,8 +78,8 @@ public class Queue extends Service {
                 Account a = Account.byId(dbh.getReadableDatabase(), account_id.intValue());
                 Mailer m = new Mailer(a);
                 m.send(msg);
-                Intent local = new Intent(SEND_ACTION);
-                local.putExtra(SEND_STATUS, COMPLETE);
+                Intent local = new Intent(Global.SEND_ACTION);
+                local.putExtra(Global.SEND_STATUS, Global.COMPLETE);
                 local.putExtra("message_id", message_id);
                 LocalBroadcastManager.getInstance(self).sendBroadcast(local);
             }

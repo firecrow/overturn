@@ -50,7 +50,7 @@ public class AccountActivity extends AppCompatActivity {
         View.OnClickListener fetch = new View.OnClickListener() {
             public void onClick(View v) {
                 Intent fetchItem = new Intent(getApplicationContext(), Queue.class);
-                fetchItem.setAction(Queue.TRIGGER_FETCH);
+                fetchItem.setAction(Global.TRIGGER_FETCH);
                 fetchItem.putExtra("account_id", new Long(a.data._id).longValue());
                 Log.e("fcrow", "---------------------- about to fetch intent");
                 startService(fetchItem);

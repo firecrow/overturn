@@ -1,11 +1,16 @@
 package tech.overturn.crowmail.models;
 
+import tech.overturn.crowmail.Global;
+import tech.overturn.crowmail.R;
 import android.app.Notification;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
+import android.support.constraint.solver.Goal;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Date;
 
 import tech.overturn.crowmail.Data;
@@ -24,56 +29,46 @@ public class ErrorStatus extends Data {
     public Integer account_id;
     public String stack;
 
-    public ErrorStatus log(SQLiteDatabase db, String key, String message, String cause, String stack, Integer account_id, Integer message_id) {
-        this.key = key;
-        this.message = message;
-        this.cause = cause;
-        this.stack = stack;
-        this.account_id = account_id;
-        this.message_id = message_id;
-        this.date = new Long(new Date().getTime() / 1000).intValue();
+    public void log(SQLiteDatabase db){
         Orm.insert(db, ErrorStatus.tableName, this);
-        return this;
     }
 
-    public ErrorStatus log(SQLiteDatabase db, String key, String message, Integer account_id, Integer message_id) {
-        this.key = key;
-        this.message = message;
-        this.account_id = account_id;
-        this.message_id = message_id;
-        this.date = new Long(new Date().getTime() / 1000).intValue();
-        Orm.insert(db, ErrorStatus.tableName, this);
-        return this;
-    }
-
-    public ErrorStatus log(SQLiteDatabase db, String key, String message) {
-        this.key = key;
-        this.message = message;
-        this.date = new Long(new Date().getTime() / 1000).intValue();
-        Orm.insert(db, ErrorStatus.tableName, this);
-        return this;
+    public static String stackToString(Exception e) {
+        StringWriter errors = new StringWriter();
+        e.printStackTrace(new PrintWriter(errors));
+        return errors.toString();
     }
 
     public void sendNotify(Context context, Boolean vibrate) {
+        String msg_group_key;
+        if (account_id != null) {
+            msg_group_key = String.format("%s%d", Global.CROWMAIL_ERROR, account_id);
+        } else {
+            msg_group_key = Global.CROWMAIL_ERROR;
+        }
         NotificationManagerCompat nmng = NotificationManagerCompat.from(context);
         Notification sum = new Notification.Builder(context)
                 .setSmallIcon(R.drawable.exc)
                 .setGroupSummary(true)
-                .setGroup("CROWMAIL_ERROR")
+                .setGroup(msg_group_key)
                 .build()
                 ;
-        nmng.notify("CROWMAIL_ERROR", -1, sum);
+        nmng.notify(msg_group_key, -1, sum);
+        String key_str = this.key;
+        if(account_id != null) {
+            key_str += " ac:"+account_id.toString();
+        }
         Notification.Builder nb = new Notification.Builder(context)
-                .setContentTitle(key)
-                .setContentText(message+cause)
+                .setContentTitle(key_str)
+                .setContentText(cause+" "+message)
                 .setSmallIcon(R.drawable.exc)
                 .setGroupSummary(false)
-                .setGroup("CROWMAIL_ERROR")
+                .setGroup(msg_group_key)
                 ;
         if (vibrate) {
-            nb.setVibrate(new long[]{ 1000, 1000, 1000})
+            nb.setVibrate(new long[]{ 1000, 1000, 1000});
         }
-        nmng.notify("CROWMAIL_ERROR", -(notify_offset++), nb.build());
+        nmng.notify(msg_group_key, -(notify_offset++), nb.build());
     }
 
     public Integer getId() {

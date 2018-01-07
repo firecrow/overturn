@@ -47,7 +47,7 @@ public class SendActivity extends AppCompatActivity {
             }
         });
 
-        IntentFilter filter = new IntentFilter(Queue.SEND_ACTION);
+        IntentFilter filter = new IntentFilter(Global.SEND_ACTION);
         LocalBroadcastManager.getInstance(this).registerReceiver(new Receiver(), filter);
     }
 
@@ -63,7 +63,7 @@ public class SendActivity extends AppCompatActivity {
             cmsg.save();
 
             Intent queueItem = new Intent(getApplicationContext(), Queue.class);
-            queueItem.setAction(Queue.TRIGGER_SEND);
+            queueItem.setAction(Global.TRIGGER_SEND);
             queueItem.putExtra("account_id", new Long(a.data._id).longValue());
             queueItem.putExtra("message_id", new Long(cmsg.data._id).longValue());
             Log.e("fcrow", "---------------------- about to send intent");

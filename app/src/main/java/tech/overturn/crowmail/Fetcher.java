@@ -19,6 +19,8 @@ import com.sun.mail.imap.protocol.Status;
 
 
 import java.util.Date;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Properties;
 
 import javax.mail.Folder;
@@ -27,6 +29,8 @@ import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.Store;
 import javax.mail.URLName;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 
 import tech.overturn.crowmail.models.Account;
 import tech.overturn.crowmail.models.ErrorStatus;
@@ -51,43 +55,86 @@ public class Fetcher {
         this.a = a;
         this.context = context;
 
+        String protocol;
         props = System.getProperties();
+        if (a.data.imapSslType.equals("STARTTLS")) {
+            Log.d("frow","----STARTTLS");
+            props.setProperty("mail.imap.auth", "true");
+            props.setProperty("mail.imap.timeout", "5000");
+            props.setProperty("mail.imap.connectiontimeout", "5000");
+            props.setProperty("mail.imap.socketFactory.class", "tech.overturn.crowmail.SSLCrowFactory");
+            props.setProperty("ssl.SocketFactory.provider", "tech.overturn.crowmail.SSLCrowFactory");
+            props.setProperty("mail.imap.socketFactory.port", a.data.imapPort.toString());
+            props.setProperty("mail.imap.starttls.enable", "true");
+            protocol = "imap";
+        } else {
+            protocol = "imaps";
+            props.setProperty("mail.imaps.timeout", "5000");
+            props.setProperty("mail.imaps.connectiontimeout", "5000");
+        }
         url = new URLName(
-                "imaps",
+                protocol,
                 a.data.imapHost,
                 a.data.imapPort,
                 "Inbox",
                 a.data.user,
                 a.data.password);
-        props = System.getProperties();
-        props.setProperty("mail.imap.timeout", "3100");
-        props.setProperty("mail.imap.connectiontimeout", "3200");
-        props.setProperty("mail.imaps.timeout", "3300");
-        props.setProperty("mail.imaps.connectiontimeout", "3400");
     }
 
     public boolean connect() {
         Long start = new Date().getTime();
         try {
             session = Session.getInstance(props);
+            start = new Date().getTime();
             store = session.getStore(url);
+            start = new Date().getTime();
             store.connect();
+            start = new Date().getTime();
             folder = (IMAPFolder) store.getFolder(url);
+            start = new Date().getTime();
             folder.open(Folder.READ_ONLY);
+            start = new Date().getTime();
             if(!folder.isOpen()){
                 throw new Exception(String.format("Folder '%s' is not open in Fetcher.connect", folder.getName()));
             }
             return true;
         } catch(Exception e) {
             Log.d("fcrow","------- Error in Fetcher connect "+ e.getMessage(), e);
-            String key = String.format("connect error %d", (new Date().getTime()-start)/1000);
-            new ErrorManager(context, dbh).error(e, key, a.data._id, 0);
+            String key = String.format("connect error millis: %d", (new Date().getTime()-start));
+            ErrorStatus err = new ErrorStatus();
+            err.key = key;
+            err.message = e.getMessage();
+            if(e.getCause() != null) {
+                err.cause = e.getCause().getClass().getSimpleName();
+            }else {
+                err.cause = e.getClass().getSimpleName();
+            }
+            err.account_id = a.data._id;
+            err.stack = ErrorStatus.stackToString(e);
+            err.log(dbh.getWritableDatabase());
+            err.sendNotify(context, true);
             return false;
         }
     }
 
     public void loop() {
-        new ErrorManager(context, dbh).error(null, "loop start", a.data._id, 0);
+        ErrorStatus err;
+
+        err = new ErrorStatus();
+        err.key = "loop start";
+        err.account_id = a.data._id;
+        err.log(dbh.getWritableDatabase());
+        err.sendNotify(context, false);
+
+        String msg_group_key;
+        if (a.data._id != null) {
+            msg_group_key = String.format("%s%d", Global.CROWMAIL, a.data._id);
+        } else {
+            msg_group_key = Global.CROWMAIL;
+        }
+        if(a.data.uidnext == null || a.data.uidnext == 0){
+            a.data.uidnext = 1;
+        }
         try {
             while(true) {
                 if(connect()) {
@@ -106,9 +153,9 @@ public class Fetcher {
                         Notification sum = new Notification.Builder(context)
                                 .setSmallIcon(R.drawable.notif)
                                 .setGroupSummary(true)
-                                .setGroup("CROWMAIL")
+                                .setGroup(msg_group_key)
                                 .build();
-                        nmng.notify("CROWMAIL", 0, sum);
+                        nmng.notify(msg_group_key, 0, sum);
                         for (int i = 0; i < msgs.length; i++) {
                             Log.d("fcrow", String.format("-------- new mail %s:%s", msgs[i].getFrom()[0], msgs[i].getSubject()));
                             Notification n = new Notification.Builder(context)
@@ -116,18 +163,18 @@ public class Fetcher {
                                     .setContentText(msgs[i].getSubject())
                                     .setSmallIcon(R.drawable.notif)
                                     .setGroupSummary(false)
-                                    .setGroup("CROWMAIL")
+                                    .setGroup(msg_group_key)
                                     .build();
-                            nmng.notify("CROWMAIL", previous + i, n);
+                            nmng.notify(msg_group_key, previous + i, n);
                         }
                         a.data.uidnext = uidnext.intValue();
                         a.save(dbh.getWritableDatabase());
                     }
                 }
-                if(folder.isOpen()) {
+                if(folder != null && folder.isOpen()) {
                     folder.close(false);
                 }
-                if(store.isConnected()) {
+                if(store != null && store.isConnected()) {
                     store.close();
                 }
                 Thread.sleep(FETCH_DELAY);
@@ -135,14 +182,37 @@ public class Fetcher {
 
         } catch (InterruptedException e) {
             Log.d("fcrow", "------- Error in Fetcher loop " + e.getMessage(), e);
-            new ErrorManager(context, dbh).error(e, "fetch_interupt", a.data._id, 0);
+            err = new ErrorStatus();
+            err.key = "fetch interupt";
+            err.message = e.getMessage();
+            err.cause = e.getClass().getSimpleName();
+            err.account_id = a.data._id;
+            err.log(dbh.getWritableDatabase());
+            err.sendNotify(context, false);
+
         } catch (MessagingException e) {
             Log.d("fcrow", "------- Error in Fetcher loop " + e.getMessage(), e);
-            new ErrorManager(context, dbh).error(e, "fetch", a.data._id, 0);
+            err = new ErrorStatus();
+            err.key = "fetch";
+            err.message = e.getMessage();
+            err.cause = e.getClass().getSimpleName();
+            err.account_id = a.data._id;
+            err.log(dbh.getWritableDatabase());
+            err.sendNotify(context, false);
         } catch (Exception e) {
             Log.d("fcrow", "------- Error in Fetcher loop " + e.getMessage(), e);
-            new ErrorManager(context, dbh).error(e, "fetch_generic", a.data._id, 0);
+            err = new ErrorStatus();
+            err.key = "fetch_generic";
+            err.message = e.getMessage();
+            err.cause = e.getClass().getSimpleName();
+            err.account_id = a.data._id;
+            err.log(dbh.getWritableDatabase());
+            err.sendNotify(context, false);
         }
-        new ErrorManager(context, dbh).error(null, "loop finish", a.data._id, 0);
+        err = new ErrorStatus();
+        err.key = "loop finished";
+        err.account_id = a.data._id;
+        err.log(dbh.getWritableDatabase());
+        err.sendNotify(context, false);
     }
 }
