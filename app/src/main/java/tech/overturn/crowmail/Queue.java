@@ -9,6 +9,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.widget.Toast;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,6 +30,8 @@ public class Queue extends Service {
     public void onCreate() {
         dbh = new DBHelper(getBaseContext());
         recieving = new HashMap<Integer, Account>();
+        Log.d("fcrow", "---------- service created");
+        new ErrorManager(getApplicationContext(), dbh).error(null, "service created",0 , 0);
     }
 
     @Override
@@ -50,6 +53,13 @@ public class Queue extends Service {
         };
 
         return Service.START_STICKY;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Log.d("fcrow", "---------- service destroyed");
+        new ErrorManager(getApplicationContext(), dbh).error(null, "service destroyed",0 , 0);
     }
 
     public void sendEmail(final Intent intent) {
