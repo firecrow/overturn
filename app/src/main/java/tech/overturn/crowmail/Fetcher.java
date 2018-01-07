@@ -60,7 +60,10 @@ public class Fetcher {
                 a.data.user,
                 a.data.password);
         props = System.getProperties();
-        props.setProperty("mail.imap.timeout", "3000");
+        props.setProperty("mail.imap.timeout", "3100");
+        props.setProperty("mail.imap.connectiontimeout", "3200");
+        props.setProperty("mail.imaps.timeout", "3300");
+        props.setProperty("mail.imaps.connectiontimeout", "3400");
     }
 
     public boolean connect() {
@@ -121,8 +124,12 @@ public class Fetcher {
                         a.save(dbh.getWritableDatabase());
                     }
                 }
-                folder.close(false);
-                store.close();
+                if(folder.isOpen()) {
+                    folder.close(false);
+                }
+                if(store.isConnected()) {
+                    store.close();
+                }
                 Thread.sleep(FETCH_DELAY);
             }
 
