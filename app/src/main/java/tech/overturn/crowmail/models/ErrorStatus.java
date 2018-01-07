@@ -14,6 +14,7 @@ public class ErrorStatus extends Data {
     public String cause;
     public Integer message_id;
     public Integer account_id;
+    public String stack;
 
     public Integer getId() {
         return _id;

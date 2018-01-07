@@ -60,7 +60,7 @@ public class Fetcher {
                 a.data.user,
                 a.data.password);
         props = System.getProperties();
-        props.setProperty("mail.imaps.timeout", "3000");
+        props.setProperty("mail.imap.timeout", "3000");
     }
 
     public boolean connect() {
@@ -77,7 +77,7 @@ public class Fetcher {
             return true;
         } catch(Exception e) {
             Log.d("fcrow","------- Error in Fetcher connect "+ e.getMessage(), e);
-            String key = String.format("connect error %d", new Date().getTime()-start);
+            String key = String.format("connect error %d", (new Date().getTime()-start)/1000);
             new ErrorManager(context, dbh).error(e, key, a.data._id, 0);
             return false;
         }
@@ -125,6 +125,7 @@ public class Fetcher {
                 store.close();
                 Thread.sleep(FETCH_DELAY);
             }
+
         } catch (InterruptedException e) {
             Log.d("fcrow", "------- Error in Fetcher loop " + e.getMessage(), e);
             new ErrorManager(context, dbh).error(e, "fetch_interupt", a.data._id, 0);

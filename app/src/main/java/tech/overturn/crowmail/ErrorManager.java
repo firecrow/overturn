@@ -4,6 +4,8 @@ import android.app.Notification;
 import android.content.Context;
 import android.support.v4.app.NotificationManagerCompat;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Date;
 
 import tech.overturn.crowmail.models.ErrorStatus;
@@ -23,10 +25,14 @@ public class ErrorManager {
         error.key = key;
         if (e != null) {
             error.message = e.getMessage();
-            error.cause = e.getCause().getMessage();
+            error.cause = e.getClass().getName();
+            StringWriter sw = new StringWriter();
+            e.printStackTrace(new PrintWriter(sw));
+            error.stack = sw.toString();
         }else{
             error.message = "";
             error.cause = "";
+            error.stack = "";
         }
         error.account_id = account_id;
         error.message_id = message_id;
