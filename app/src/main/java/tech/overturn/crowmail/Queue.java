@@ -15,6 +15,7 @@ import java.util.Map;
 
 import tech.overturn.crowmail.models.Account;
 import tech.overturn.crowmail.models.CrowMessage;
+import tech.overturn.crowmail.models.ErrorStatus;
 
 public class Queue extends Service {
     public static final String TRIGGER_SEND = "tech.overturn.crowmail.TRIGGER_SEND";
@@ -31,7 +32,8 @@ public class Queue extends Service {
         dbh = new DBHelper(getBaseContext());
         recieving = new HashMap<Integer, Account>();
         Log.d("fcrow", "---------- service created");
-        new ErrorManager(getApplicationContext(), dbh).error(null, "service created",0 , 0);
+        new ErrorStatus().log(dbh.getWritableDatabase(), "service created","")
+                .sendNotify(getApplicationContext(), false);
     }
 
     @Override
@@ -59,7 +61,8 @@ public class Queue extends Service {
     public void onDestroy() {
         super.onDestroy();
         Log.d("fcrow", "---------- service destroyed");
-        new ErrorManager(getApplicationContext(), dbh).error(null, "service destroyed",0 , 0);
+        new ErrorStatus().log(dbh.getWritableDatabase(), "service destroyed", "")
+                .sendNotify(getApplicationContext(), false);
     }
 
     public void sendEmail(final Intent intent) {

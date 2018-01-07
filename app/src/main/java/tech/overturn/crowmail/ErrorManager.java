@@ -20,25 +20,17 @@ public class ErrorManager {
         this.context = context;
     }
 
-    public void error(Exception e, String key, Integer account_id, Integer message_id) {
+    public void error(String key, String message, String cause, String stack, Integer account_id, Integer message_id) {
         ErrorStatus error = new ErrorStatus();
         error.key = key;
-        if (e != null) {
-            error.message = e.getMessage();
-            error.cause = e.getClass().getName();
-            StringWriter sw = new StringWriter();
-            e.printStackTrace(new PrintWriter(sw));
-            error.stack = sw.toString();
-        }else{
-            error.message = "";
-            error.cause = "";
-            error.stack = "";
-        }
+        error.message = message;
+        error.cause = cause;
+        error.stack = stack;
         error.account_id = account_id;
         error.message_id = message_id;
         error.date = new Long(new Date().getTime() / 1000).intValue();
         Orm.insert(dbh.getWritableDatabase(), ErrorStatus.tableName, error);
-        sendNotify(String.format("error with %s", key), error.message+", "+error.cause);
+        sendNotify(key, error.message);
     }
 
     public void sendNotify(String title, String body) {
