@@ -117,6 +117,46 @@ public class Fetcher {
         }
     }
 
+    public Long getUidNext(IMAPFolder folder, String folder) {
+        return folder.doCommand(new IMAPFolder.ProtocolCommand() {
+            public Object doCommand(IMAPProtocol p)
+            throws ProtocolException {
+               Status status = p.status("Inbox", new String[]{"uidnext"});
+                return status.uidnext;
+            }
+        });
+    }
+
+    public void notifyUpdates(Integer previous) {
+        String msg_group_key;
+        if (a.data._id != null) {
+            msg_group_key = String.format("%s%d", Global.CROWMAIL, a.data._id);
+        } else {
+            msg_group_key = Global.CROWMAIL;
+        }
+
+        NotificationManagerCompat nmng = NotificationManagerCompat.from(context);
+        Message[] msgs = folder.getMessagesByUID(a.data.uidnext, uidnext - 1);
+        Notification sum = new Notification.Builder(context)
+                .setSmallIcon(R.drawable.notif)
+                .setContentTitle(a.data.email)
+                .setGroupSummary(true)
+                .setGroup(msg_group_key)
+                .build();
+        nmng.notify(msg_group_key, 0, sum);
+        for (int i = 0; i < msgs.length; i++) {
+            Log.d("fcrow", String.format("-------- new mail %s:%s", msgs[i].getFrom()[0], msgs[i].getSubject()));
+            Notification n = new Notification.Builder(context)
+                    .setContentTitle(msgs[i].getFrom()[0].toString())
+                    .setContentText(msgs[i].getSubject())
+                    .setSmallIcon(R.drawable.notif)
+                    .setGroupSummary(false)
+                    .setGroup(msg_group_key)
+                    .build();
+            nmng.notify(msg_group_key, previous+i, n);
+        }
+    }
+
     public void loop() {
         ErrorStatus err;
 
@@ -126,48 +166,13 @@ public class Fetcher {
         err.log(dbh.getWritableDatabase());
         err.sendNotify(context, false);
 
-        String msg_group_key;
-        if (a.data._id != null) {
-            msg_group_key = String.format("%s%d", Global.CROWMAIL, a.data._id);
-        } else {
-            msg_group_key = Global.CROWMAIL;
-        }
-        if(a.data.uidnext == null || a.data.uidnext == 0){
-            a.data.uidnext = 1;
-        }
         try {
             while(true) {
                 if(connect()) {
-                    Long uidnext = (Long) folder.doCommand(new IMAPFolder.ProtocolCommand() {
-                        public Object doCommand(IMAPProtocol p)
-                                throws ProtocolException {
-                            Status status = p.status("Inbox", new String[]{"uidnext"});
-                            return status.uidnext;
-                        }
-                    });
-                    Log.d("fcrow", String.format("-------- next %d", uidnext));
-                    Integer previous = a.data.uidnext;
+                    Long uidnext = getUidNext(folder, "Inbox");
+                    Integer previous = (a.data.uidnext != null) ? a.data.uidnext : 1;
                     if (previous != uidnext.intValue()) {
-                        NotificationManagerCompat nmng = NotificationManagerCompat.from(context);
-                        Message[] msgs = folder.getMessagesByUID(a.data.uidnext, uidnext - 1);
-                        Notification sum = new Notification.Builder(context)
-                                .setSmallIcon(R.drawable.notif)
-                                .setContentTitle(a.data.email)
-                                .setGroupSummary(true)
-                                .setGroup(msg_group_key)
-                                .build();
-                        nmng.notify(msg_group_key, 0, sum);
-                        for (int i = 0; i < msgs.length; i++) {
-                            Log.d("fcrow", String.format("-------- new mail %s:%s", msgs[i].getFrom()[0], msgs[i].getSubject()));
-                            Notification n = new Notification.Builder(context)
-                                    .setContentTitle(msgs[i].getFrom()[0].toString())
-                                    .setContentText(msgs[i].getSubject())
-                                    .setSmallIcon(R.drawable.notif)
-                                    .setGroupSummary(false)
-                                    .setGroup(msg_group_key)
-                                    .build();
-                            nmng.notify(msg_group_key, previous + i, n);
-                        }
+                        notifyUpdates(previous);
                         a.data.uidnext = uidnext.intValue();
                         a.save(dbh.getWritableDatabase());
                     }
