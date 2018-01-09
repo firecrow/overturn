@@ -21,6 +21,7 @@ public class Queue extends Service {
 
     DBHelper dbh;
     Map<Integer, Account> recieving;
+    QueueHandler handler;
 
     @Override
     public void onCreate() {
@@ -32,6 +33,7 @@ public class Queue extends Service {
         err.key = "service created";
         err.log(dbh.getWritableDatabase());
         err.sendNotify(getApplicationContext(), false);
+        this.handler = new QueueHandler();
     }
 
     @Override
@@ -43,12 +45,29 @@ public class Queue extends Service {
     public int onStartCommand(final Intent intent, int flags, int startId) {
         super.onStartCommand(intent, flags, startId);
         final Service self = this;
+
         if (intent != null) {
+            Long account_id = intent.getLongExtra("account_id", 0);
+            final Account a = Account.byId(dbh.getReadableDatabase(), account_id.intValue());
+
+            Long message_id;
+            CrowMessage msg;
+            if(intent.hasExtra("message_id")) {
+                message_id = intent.getLongExtra("message_id", 0);
+                msg = CrowMessage.byId(dbh.getReadableDatabase(), message_id.intValue());
+            }
+
             Log.d("fcrow", String.format("--------------- ACTION: %s", intent.getAction()));
             if (intent.getAction().equals(Global.TRIGGER_SEND)) {
-                sendEmail(intent);
+                Mailer m = new Mailer(a);
+                this.handler.enqueue(Mailer.getQueuedItem(a, msg));
             } else if (intent.getAction().equals(Global.TRIGGER_FETCH)) {
-                startRecieving(intent);
+                if(recieving.get(account_id.intValue()) != null) {
+                    Log.d("fcrow", String.format("--------------- already recieving"));
+                } else {
+                    recieving.put(account_id.intValue(), a);
+                    this.handler.enqueue(Fetcher.getQueueItem(a));
+                }
             }
         };
 
@@ -64,43 +83,6 @@ public class Queue extends Service {
         err.key = "service destroyed";
         err.log(dbh.getWritableDatabase());
         err.sendNotify(getApplicationContext(), false);
-    }
-
-    public void sendEmail(final Intent intent) {
-        final Service self = this;
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Long account_id = intent.getLongExtra("account_id", 0);
-                Long message_id = intent.getLongExtra("message_id", 0);
-                CrowMessage msg = CrowMessage.byId(dbh.getReadableDatabase(), message_id.intValue());
-                Log.d("fcrow", String.format("--------------- in TRIGGER : from:%s to:%s", msg.from.getAddress(), msg.to[0].getAddress()));
-                Account a = Account.byId(dbh.getReadableDatabase(), account_id.intValue());
-                Mailer m = new Mailer(a);
-                m.send(msg);
-                Intent local = new Intent(Global.SEND_ACTION);
-                local.putExtra(Global.SEND_STATUS, Global.COMPLETE);
-                local.putExtra("message_id", message_id);
-                LocalBroadcastManager.getInstance(self).sendBroadcast(local);
-            }
-        });
-        t.start();
-    }
-
-    public void startRecieving(Intent intent) {
-        Long account_id = intent.getLongExtra("account_id", 0);
-        final Account a = Account.byId(dbh.getReadableDatabase(), account_id.intValue());
-        if(recieving.get(account_id.intValue()) != null) {
-            Log.d("fcrow", String.format("--------------- already recieving"));
-        } else {
-            recieving.put(account_id.intValue(), a);
-            Thread t = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    new Fetcher(getBaseContext(), a).loop();
-                }
-            });
-            t.start();
-        }
+        stopSelf();
     }
 }

@@ -13,12 +13,7 @@ import tech.overturn.crowmail.struct.QueueItem;
 public class QueueHandler extends Handler {
     List<QueueItem> queue;
 
-    public QueueHandler() {
-        this.queue = new ArrayList<QueueItem>();
-    }
-
     public Integer enqueue(QueueItem item) throws InterruptedException {
-        this.queue.add(item);
         this.post(genRunnable(item));
     }
 
@@ -27,13 +22,22 @@ public class QueueHandler extends Handler {
         return new Runnable() {
             @Override
             public void run() {
-                item.task.run();
-                if(item.next != null && item.next != 0) {
+                try {
+                    Long next = item.next;
                     try {
-                        self.postDelayed(genRunnable(item), item.next);
-                    } catch (InterruptedException e) {
-                        Log.d("fcrow", "---- error creating outer runnable");
+                        item.task.run();
+                    } catch (RetryException e) {
+                        next = item.askRetry();
                     }
+                    if(next != null && next != -1) {
+                        if(next == 0) {
+                            self.post(genRunnable(item));
+                        }else{
+                            self.postDelayed(genRunnable(item), next);
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    Log.d("fcrow", "---- error creating outer runnable");
                 }
             }
         };

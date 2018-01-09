@@ -34,6 +34,7 @@ import javax.net.ssl.SSLSocketFactory;
 
 import tech.overturn.crowmail.models.Account;
 import tech.overturn.crowmail.models.ErrorStatus;
+import tech.overturn.crowmail.struct.QueueItem;
 
 import static android.content.Context.NOTIFICATION_SERVICE;
 
@@ -45,7 +46,7 @@ public class Fetcher {
     URLName url;
     Properties props;
     Session session;
-    int FETCH_DELAY = 1000 * 60 * 1;
+    Long FETCH_DELAY = 1000 * 60 * 1;
     Context context;
 
     DBHelper dbh;
@@ -157,68 +158,46 @@ public class Fetcher {
         }
     }
 
-    public void loop() {
-        ErrorStatus err;
-
-        err = new ErrorStatus();
+    public QueueItem getQueuedItem(final Account a) {
+        final ErrorStatus err = new ErrorStatus();
         err.key = "loop start";
         err.account_id = a.data._id;
         err.log(dbh.getWritableDatabase());
         err.sendNotify(context, false);
-
-        try {
-            while(true) {
-                if(connect()) {
-                    Long uidnext = getUidNext(folder, "Inbox");
-                    Integer previous = (a.data.uidnext != null) ? a.data.uidnext : 1;
-                    if (previous != uidnext.intValue()) {
-                        notifyUpdates(previous);
-                        a.data.uidnext = uidnext.intValue();
-                        a.save(dbh.getWritableDatabase());
+        QueueItem item = new QueueItem(
+            "Fetch",
+            new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        if(connect()) {
+                            Long uidnext = getUidNext(folder, "Inbox");
+                            Integer previous = (a.data.uidnext != null) ? a.data.uidnext : 1;
+                            if (previous != uidnext.intValue()) {
+                                notifyUpdates(previous);
+                                a.data.uidnext = uidnext.intValue();
+                                a.save(dbh.getWritableDatabase());
+                            }
+                        }
+                        if(folder != null && folder.isOpen()) {
+                            folder.close(false);
+                        }
+                        if(store != null && store.isConnected()) {
+                            store.close();
+                        }
+                    } catch (Exception e) {
+                        Log.d("fcrow", "------- Error in Fetcher loop " + e.getMessage(), e);
+                        err.key = "fetch_generic";
+                        err.message = e.getMessage();
+                        err.cause = e.getClass().getSimpleName();
+                        err.account_id = a.data._id;
+                        err.log(dbh.getWritableDatabase());
+                        err.sendNotify(context, false);
                     }
                 }
-                if(folder != null && folder.isOpen()) {
-                    folder.close(false);
-                }
-                if(store != null && store.isConnected()) {
-                    store.close();
-                }
-                Thread.sleep(FETCH_DELAY);
-            }
-
-        } catch (InterruptedException e) {
-            Log.d("fcrow", "------- Error in Fetcher loop " + e.getMessage(), e);
-            err = new ErrorStatus();
-            err.key = "fetch interupt";
-            err.message = e.getMessage();
-            err.cause = e.getClass().getSimpleName();
-            err.account_id = a.data._id;
-            err.log(dbh.getWritableDatabase());
-            err.sendNotify(context, false);
-
-        } catch (MessagingException e) {
-            Log.d("fcrow", "------- Error in Fetcher loop " + e.getMessage(), e);
-            err = new ErrorStatus();
-            err.key = "fetch";
-            err.message = e.getMessage();
-            err.cause = e.getClass().getSimpleName();
-            err.account_id = a.data._id;
-            err.log(dbh.getWritableDatabase());
-            err.sendNotify(context, false);
-        } catch (Exception e) {
-            Log.d("fcrow", "------- Error in Fetcher loop " + e.getMessage(), e);
-            err = new ErrorStatus();
-            err.key = "fetch_generic";
-            err.message = e.getMessage();
-            err.cause = e.getClass().getSimpleName();
-            err.account_id = a.data._id;
-            err.log(dbh.getWritableDatabase());
-            err.sendNotify(context, false);
-        }
-        err = new ErrorStatus();
-        err.key = "loop finished";
-        err.account_id = a.data._id;
-        err.log(dbh.getWritableDatabase());
-        err.sendNotify(context, false);
+            },
+            FETCH_DELAY
+        );
+        return item;
     }
 }
