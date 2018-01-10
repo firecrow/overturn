@@ -66,7 +66,7 @@ public class Queue extends Service {
                     Log.d("fcrow", String.format("--------------- already recieving"));
                 } else {
                     recieving.put(account_id.intValue(), a);
-                    this.handler.enqueue(Fetcher.getQueueItem(a));
+                    this.handler.enqueue(new Fetcher(getApplicationContext(), a));
                 }
             }
         };

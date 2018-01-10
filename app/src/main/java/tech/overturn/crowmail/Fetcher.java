@@ -38,16 +38,16 @@ import tech.overturn.crowmail.struct.QueueItem;
 
 import static android.content.Context.NOTIFICATION_SERVICE;
 
-public class Fetcher {
+public class Fetcher extends QueueItem {
 
     Account a;
     IMAPFolder folder;
     Store store;
     URLName url;
-    Properties props;
     Session session;
-    Long FETCH_DELAY = 1000 * 60 * 1;
+    Long FETCH_DELAY = 1000 * 60 * 1L;
     Context context;
+    String action = "fetch";
 
     DBHelper dbh;
 
@@ -55,9 +55,10 @@ public class Fetcher {
         dbh = new DBHelper(context);
         this.a = a;
         this.context = context;
+    }
 
-        String protocol;
-        props = System.getProperties();
+    private Properties getProperties() {
+        Properties props = System.getProperties();
         if (a.data.imapSslType.equals("STARTTLS")) {
             Log.d("frow","----STARTTLS");
             props.setProperty("mail.imap.auth", "true");
@@ -67,13 +68,16 @@ public class Fetcher {
             props.setProperty("ssl.SocketFactory.provider", "tech.overturn.crowmail.SSLCrowFactory");
             props.setProperty("mail.imap.socketFactory.port", a.data.imapPort.toString());
             props.setProperty("mail.imap.starttls.enable", "true");
-            protocol = "imap";
         } else {
-            protocol = "imaps";
             props.setProperty("mail.imaps.timeout", "5000");
             props.setProperty("mail.imaps.connectiontimeout", "5000");
         }
-        url = new URLName(
+        return props;
+    }
+
+    public URLName getURLName(Properties props) {
+        String protocol = a.data.imapSslType.equals("STARTTLS") : "imap" : "imaps"; 
+        return new URLName(
                 protocol,
                 a.data.imapHost,
                 a.data.imapPort,
@@ -82,7 +86,9 @@ public class Fetcher {
                 a.data.password);
     }
 
-    public boolean connect() {
+    private boolean connect() {
+        Properties props = getProperties();
+        URLName url = getURLName(props);
         Long start = new Date().getTime();
         try {
             session = Session.getInstance(props);
@@ -118,17 +124,17 @@ public class Fetcher {
         }
     }
 
-    public Long getUidNext(IMAPFolder folder, String folder) {
-        return folder.doCommand(new IMAPFolder.ProtocolCommand() {
+    private Long getUidNext(IMAPFolder folder, final String folderName) throws MessagingException {
+        return (Long) folder.doCommand(new IMAPFolder.ProtocolCommand() {
             public Object doCommand(IMAPProtocol p)
             throws ProtocolException {
-               Status status = p.status("Inbox", new String[]{"uidnext"});
+               Status status = p.status(folderName, new String[]{"uidnext"});
                 return status.uidnext;
             }
         });
     }
 
-    public void notifyUpdates(Integer previous) {
+    private void notifyUpdates(Message[] msgs, Integer previous, Integer uidnext) throws MessagingException {
         String msg_group_key;
         if (a.data._id != null) {
             msg_group_key = String.format("%s%d", Global.CROWMAIL, a.data._id);
@@ -137,7 +143,6 @@ public class Fetcher {
         }
 
         NotificationManagerCompat nmng = NotificationManagerCompat.from(context);
-        Message[] msgs = folder.getMessagesByUID(a.data.uidnext, uidnext - 1);
         Notification sum = new Notification.Builder(context)
                 .setSmallIcon(R.drawable.notif)
                 .setContentTitle(a.data.email)
@@ -158,46 +163,60 @@ public class Fetcher {
         }
     }
 
-    public QueueItem getQueuedItem(final Account a) {
+    public Runnable getTask() {
         final ErrorStatus err = new ErrorStatus();
-        err.key = "loop start";
+        err.key = "fire fetch";
         err.account_id = a.data._id;
         err.log(dbh.getWritableDatabase());
         err.sendNotify(context, false);
-        QueueItem item = new QueueItem(
-            "Fetch",
-            new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        if(connect()) {
-                            Long uidnext = getUidNext(folder, "Inbox");
-                            Integer previous = (a.data.uidnext != null) ? a.data.uidnext : 1;
-                            if (previous != uidnext.intValue()) {
-                                notifyUpdates(previous);
-                                a.data.uidnext = uidnext.intValue();
-                                a.save(dbh.getWritableDatabase());
-                            }
+
+        final Account acc = this.a;
+        return new Runnable() {
+            @Override
+            public void run() {
+                Log.d("fcrow", "--- Fetch ran ---");
+                return;
+                /*
+                try {
+                    if(connect()) {
+                        Long uidnext = getUidNext(folder, "Inbox");
+                        Integer previous = (a.data.uidnext != null) ? a.data.uidnext : 1;
+                        if (previous != uidnext.intValue()) {
+                            Message[] msgs = folder.getMessagesByUID(a.data.uidnext, uidnext - 1);
+                            notifyUpdates(msgs, previous, uidnext);
+                            acc.data.uidnext = uidnext.intValue();
+                            acc.save(dbh.getWritableDatabase());
                         }
-                        if(folder != null && folder.isOpen()) {
-                            folder.close(false);
-                        }
-                        if(store != null && store.isConnected()) {
-                            store.close();
-                        }
-                    } catch (Exception e) {
-                        Log.d("fcrow", "------- Error in Fetcher loop " + e.getMessage(), e);
-                        err.key = "fetch_generic";
-                        err.message = e.getMessage();
-                        err.cause = e.getClass().getSimpleName();
-                        err.account_id = a.data._id;
-                        err.log(dbh.getWritableDatabase());
-                        err.sendNotify(context, false);
                     }
+                    if(folder != null && folder.isOpen()) {
+                        folder.close(false);
+                    }
+                    if(store != null && store.isConnected()) {
+                        store.close();
+                    }
+                } catch (Exception e) {
+                    Log.d("fcrow", "------- Error in Fetcher loop " + e.getMessage(), e);
+                    err.key = "fetch_generic";
+                    err.message = e.getMessage();
+                    err.cause = e.getClass().getSimpleName();
+                    err.account_id = a.data._id;
+                    err.log(dbh.getWritableDatabase());
+                    err.sendNotify(context, false);
                 }
-            },
-            FETCH_DELAY
-        );
-        return item;
+                */
+            }
+        };
+    }
+
+    public Long getDelay() {
+        return FETCH_DELAY;
+    }
+
+    public String getAction() {
+        return "fetch";
+    }
+
+    public Long askRetry() {
+        return -1L;
     }
 }

@@ -23,9 +23,9 @@ public class QueueHandler extends Handler {
             @Override
             public void run() {
                 try {
-                    Long next = item.next;
+                    Long next = item.getNext();
                     try {
-                        item.task.run();
+                        item.getTask().run();
                     } catch (RetryException e) {
                         next = item.askRetry();
                     }
