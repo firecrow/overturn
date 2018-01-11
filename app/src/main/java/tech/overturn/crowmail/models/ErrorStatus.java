@@ -1,5 +1,6 @@
 package tech.overturn.crowmail.models;
 
+import tech.overturn.crowmail.CrowmailException;
 import tech.overturn.crowmail.Global;
 import tech.overturn.crowmail.R;
 import android.app.Notification;
@@ -8,6 +9,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.support.constraint.solver.Goal;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
+import android.util.Log;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -25,12 +27,36 @@ public class ErrorStatus extends Data {
     public String key;
     public String message;
     public String cause;
+    public String name;
+    public String location;
     public Integer message_id;
     public Integer account_id;
     public String stack;
 
     public void log(SQLiteDatabase db){
         Orm.insert(db, ErrorStatus.tableName, this);
+    }
+
+    public static void fromCme(Context context, SQLiteDatabase db, String location, CrowmailException cme) {
+        ErrorStatus s = new ErrorStatus();
+        if(cme.key.equals(CrowmailException.CONNECTION)
+                || cme.key.equals(CrowmailException.ERROR)
+                || cme.key.equals(CrowmailException.TIMEOUT)
+                || cme.key.equals(CrowmailException.UNKNOWN)){
+            s.sendNotify(context, false);
+        }
+        Log.d("fcrow", "------- Error in Fetcher loop " + cme.getMessage(), cme);
+        s.key = cme.key;
+        s.location = location;
+        s.name = cme.getClass().getSimpleName();
+        s.message = cme.getMessage();
+        if (cme.getCause() != null) {
+            s.cause = cme.getClass().getSimpleName();
+        }
+        s.account_id = cme.a.data._id;
+        s.stack = stackToString(cme);
+        s.log(db);
+        s.sendNotify(context, false);
     }
 
     public static String stackToString(Exception e) {

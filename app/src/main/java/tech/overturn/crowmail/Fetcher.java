@@ -12,33 +12,41 @@ import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.sun.mail.iap.ConnectionException;
 import com.sun.mail.iap.ProtocolException;
 import com.sun.mail.imap.IMAPFolder;
 import com.sun.mail.imap.protocol.IMAPProtocol;
 import com.sun.mail.imap.protocol.Status;
 
 
+import java.net.ConnectException;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.TimeoutException;
 
 import javax.mail.Folder;
+import javax.mail.FolderClosedException;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.Store;
 import javax.mail.URLName;
+import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
 import tech.overturn.crowmail.models.Account;
+import tech.overturn.crowmail.models.CrowMessage;
 import tech.overturn.crowmail.models.ErrorStatus;
-import tech.overturn.crowmail.struct.QueueItem;
+import tech.overturn.crowmail.QueueItem;
 
 import static android.content.Context.NOTIFICATION_SERVICE;
 
-public class Fetcher extends QueueItem {
+public class Fetcher implements QueueItem {
 
     Account a;
     IMAPFolder folder;
@@ -48,6 +56,10 @@ public class Fetcher extends QueueItem {
     Long FETCH_DELAY = 1000 * 60 * 1L;
     Context context;
     String action = "fetch";
+    public Integer failCount = 0;
+    public Date latestFailure;
+    public Integer MAX_ADJUSTED_FAIL = 5;
+    public Integer RELEASE_TIME = 1000 * 60 * 15;
 
     DBHelper dbh;
 
@@ -76,7 +88,7 @@ public class Fetcher extends QueueItem {
     }
 
     public URLName getURLName(Properties props) {
-        String protocol = a.data.imapSslType.equals("STARTTLS") : "imap" : "imaps"; 
+        String protocol = a.data.imapSslType.equals("STARTTLS") ? "imap" : "imaps";
         return new URLName(
                 protocol,
                 a.data.imapHost,
@@ -86,7 +98,7 @@ public class Fetcher extends QueueItem {
                 a.data.password);
     }
 
-    private boolean connect() {
+    private boolean connect() throws CrowmailException {
         Properties props = getProperties();
         URLName url = getURLName(props);
         Long start = new Date().getTime();
@@ -107,19 +119,8 @@ public class Fetcher extends QueueItem {
             return true;
         } catch(Exception e) {
             Log.d("fcrow","------- Error in Fetcher connect "+ e.getMessage(), e);
-            String key = String.format("connect error millis: %d", (new Date().getTime()-start));
-            ErrorStatus err = new ErrorStatus();
-            err.key = key;
-            err.message = e.getMessage();
-            if(e.getCause() != null) {
-                err.cause = e.getCause().getClass().getSimpleName();
-            }else {
-                err.cause = e.getClass().getSimpleName();
-            }
-            err.account_id = a.data._id;
-            err.stack = ErrorStatus.stackToString(e);
-            err.log(dbh.getWritableDatabase());
-            err.sendNotify(context, true);
+            throw new CrowmailException(CrowmailException.TIMEOUT,
+                    String.format("connect error millis: %d", (new Date().getTime()-start), e, a);
             return false;
         }
     }
@@ -163,7 +164,7 @@ public class Fetcher extends QueueItem {
         }
     }
 
-    public Runnable getTask() {
+    public Runnable getTask() throws CrowmailException {
         final ErrorStatus err = new ErrorStatus();
         err.key = "fire fetch";
         err.account_id = a.data._id;
@@ -175,8 +176,7 @@ public class Fetcher extends QueueItem {
             @Override
             public void run() {
                 Log.d("fcrow", "--- Fetch ran ---");
-                return;
-                /*
+                CrowmailException cme = null;
                 try {
                     if(connect()) {
                         Long uidnext = getUidNext(folder, "Inbox");
@@ -195,15 +195,24 @@ public class Fetcher extends QueueItem {
                         store.close();
                     }
                 } catch (Exception e) {
-                    Log.d("fcrow", "------- Error in Fetcher loop " + e.getMessage(), e);
-                    err.key = "fetch_generic";
-                    err.message = e.getMessage();
-                    err.cause = e.getClass().getSimpleName();
-                    err.account_id = a.data._id;
-                    err.log(dbh.getWritableDatabase());
-                    err.sendNotify(context, false);
+                    Throwable cause;
+                    if ((cause = e.getCause()) != null
+                            && cause instanceof ConnectionException
+                            || cause instanceof SocketTimeoutException
+                            || cause instanceof ConnectException
+                            || cause instanceof SocketException){
+                    cme = new CrowmailException(CrowmailException.TIMEOUT, "Connection error in fetch.", e, a);
+                } else if (e instanceof MessagingException
+                            || e instanceof ProtocolException
+                            || e instanceof FolderClosedException) {
+                    cme = new CrowmailException(CrowmailException.ERROR, "Severe error in fetch.", e, a);
+                } else {
+                    cme =  new CrowmailException(CrowmailException.UNKNOWN, "Unknown error", e, a);
                 }
-                */
+                if(cme != null){
+                    ErrorStatus.fromCme(context, dbh.getWritableDatabase(), "fetch:"+a.data._id.toString(), cme);
+                    throw cme;
+                }
             }
         };
     }
@@ -216,7 +225,23 @@ public class Fetcher extends QueueItem {
         return "fetch";
     }
 
-    public Long askRetry() {
+    private boolean updateFailureStats() {
+        Date previous = this.latestFailure;
+        this.latestFailure = new Date();
+        if(this.latestFailure.getTime() - previous.getTime() > RELEASE_TIME){
+            this.failCount = 0;
+        }else {
+            this.failCount++;
+        }
+        return this.failCount <= MAX_ADJUSTED_FAIL;
+    }
+
+    public Long askRetry(CrowmailException e) {
+        if(e.key.equals(CrowmailException.TIMEOUT)) {
+            if(updateFailureStats()) {
+                return this.getDelay();
+            }
+        }
         return -1L;
     }
 }

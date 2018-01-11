@@ -1,8 +1,8 @@
-package tech.overturn.crowmail.struct;
+package tech.overturn.crowmail;
 
-public abstract class QueueItem {
-    public abstract String getAction();
-    public abstract Runnable getTask();
-    public abstract Long getDelay();
-    public abstract Long askRetry();
+public interface QueueItem {
+    public String getAction();
+    public Runnable getTask() throws CrowmailException;
+    public Long getDelay();
+    public Long askRetry(Exception e);
 }

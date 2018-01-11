@@ -59,14 +59,18 @@ public class Queue extends Service {
 
             Log.d("fcrow", String.format("--------------- ACTION: %s", intent.getAction()));
             if (intent.getAction().equals(Global.TRIGGER_SEND)) {
-                Mailer m = new Mailer(a);
-                this.handler.enqueue(Mailer.getQueuedItem(a, msg));
+                // Mailer m = new Mailer(a);
+                // this.handler.enqueue(Mailer.getQueuedItem(a, msg));
             } else if (intent.getAction().equals(Global.TRIGGER_FETCH)) {
                 if(recieving.get(account_id.intValue()) != null) {
                     Log.d("fcrow", String.format("--------------- already recieving"));
                 } else {
-                    recieving.put(account_id.intValue(), a);
-                    this.handler.enqueue(new Fetcher(getApplicationContext(), a));
+                    try {
+                        recieving.put(account_id.intValue(), a);
+                        this.handler.enqueue(new Fetcher(getApplicationContext(), a));
+                    } catch (InterruptedException e) {
+                        Log.d("fcrow", String.format("--------------- error with item enqueue"));
+                    }
                 }
             }
         };

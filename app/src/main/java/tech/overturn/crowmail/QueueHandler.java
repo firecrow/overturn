@@ -8,12 +8,12 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.List;
 
-import tech.overturn.crowmail.struct.QueueItem;
+import tech.overturn.crowmail.QueueItem;
 
 public class QueueHandler extends Handler {
     List<QueueItem> queue;
 
-    public Integer enqueue(QueueItem item) throws InterruptedException {
+    public void enqueue(QueueItem item) throws InterruptedException {
         this.post(genRunnable(item));
     }
 
@@ -23,11 +23,11 @@ public class QueueHandler extends Handler {
             @Override
             public void run() {
                 try {
-                    Long next = item.getNext();
+                    Long next = item.getDelay();
                     try {
                         item.getTask().run();
-                    } catch (RetryException e) {
-                        next = item.askRetry();
+                    } catch (CrowmailException e) {
+                        next = item.askRetry(e);
                     }
                     if(next != null && next != -1) {
                         if(next == 0) {
