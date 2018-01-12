@@ -27,13 +27,12 @@ public class DBHelper extends SQLiteOpenHelper {
         db.execSQL(Orm.getCreateTable(CrowMessage.tableName, CrowMessageData.class));
         db.execSQL(Orm.getCreateTable(Email.tableName, Email.class));
         db.execSQL(Orm.getCreateTable(EmailToMsg.tableName, EmailToMsg.class));
-    }
-
-    public void onUpgrade(SQLiteDatabase db, int old, int version) {
         db.execSQL(Orm.getCreateTable(ErrorStatus.tableName, ErrorStatus.class));
     }
+
+    public void onUpgrade(SQLiteDatabase db, int old, int version) {}
 
     public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         onUpgrade(db, oldVersion, newVersion);
     }
-}
+

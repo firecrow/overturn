@@ -29,10 +29,10 @@ public class Queue extends Service {
         recieving = new HashMap<Integer, Account>();
         Log.d("fcrow", "---------- service created");
 
-        ErrorStatus err = new ErrorStatus();
-        err.key = "service created";
-        err.log(dbh.getWritableDatabase());
-        err.sendNotify(getApplicationContext(), false);
+        ErrorStatus.fromCme(getApplicationContext(),
+                dbh.getWritableDatabase(),
+                "service creatd",
+                null);
         this.handler = new QueueHandler();
     }
 
@@ -82,11 +82,10 @@ public class Queue extends Service {
     public void onDestroy() {
         super.onDestroy();
         Log.d("fcrow", "---------- service destroyed");
-
-        ErrorStatus err = new ErrorStatus();
-        err.key = "service destroyed";
-        err.log(dbh.getWritableDatabase());
-        err.sendNotify(getApplicationContext(), false);
+        ErrorStatus.fromCme(getApplicationContext(),
+                dbh.getWritableDatabase(),
+                "service destroyed",
+                null);
         stopSelf();
     }
 }

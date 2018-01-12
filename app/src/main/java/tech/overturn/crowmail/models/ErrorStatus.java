@@ -37,17 +37,11 @@ public class ErrorStatus extends Data {
         Orm.insert(db, ErrorStatus.tableName, this);
     }
 
-    public static void fromCme(Context context, SQLiteDatabase db, String location, CrowmailException cme) {
+    public static void fromCme(Context context, SQLiteDatabase db, String location, CrowmailException cme, boolean notify) {
         ErrorStatus s = new ErrorStatus();
-        if(cme.key.equals(CrowmailException.CONNECTION)
-                || cme.key.equals(CrowmailException.ERROR)
-                || cme.key.equals(CrowmailException.TIMEOUT)
-                || cme.key.equals(CrowmailException.UNKNOWN)){
-            s.sendNotify(context, false);
-        }
-        Log.d("fcrow", "------- Error in Fetcher loop " + cme.getMessage(), cme);
-        s.key = cme.key;
+        Log.d("fcrow", "------- Error from cme" + cme.getMessage(), cme);
         s.location = location;
+        s.key = cme.key.toString();
         s.name = cme.getClass().getSimpleName();
         s.message = cme.getMessage();
         if (cme.getCause() != null) {
@@ -56,16 +50,31 @@ public class ErrorStatus extends Data {
         s.account_id = cme.a.data._id;
         s.stack = stackToString(cme);
         s.log(db);
-        s.sendNotify(context, false);
+        if(notify) {
+            s.sendNotify(context, false);
+        }
     }
 
-    public static String stackToString(Exception e) {
+    public static void fromStrings(Context context, SQLiteDatabase db, String location, String key, String message, Integer account_id, boolean notify) {
+        ErrorStatus s = new ErrorStatus();
+        s.location = location;
+        s.key = key.toString();
+        s.message = message;
+        s.name = "FromString";
+        s.account_id = account_id;
+        s.log(db);
+        if(notify) {
+            s.sendNotify(context, false);
+        }
+    }
+
+    private static String stackToString(Exception e) {
         StringWriter errors = new StringWriter();
         e.printStackTrace(new PrintWriter(errors));
         return errors.toString();
     }
 
-    public void sendNotify(Context context, Boolean vibrate) {
+    private void sendNotify(Context context, Boolean vibrate) {
         String msg_group_key;
         if (account_id != null) {
             msg_group_key = String.format("%s%d", Global.CROWMAIL_ERROR, account_id);

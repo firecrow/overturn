@@ -5,18 +5,24 @@ import tech.overturn.crowmail.models.Account;
 public class CrowmailException extends RuntimeException {
 
     public String message;
-    public String key;
+    public CmeKey key;
 
     public Account a;
-    public static String RETRY = "retry";
-    public static String TIMEOUT = "timeout";
-    public static String CONNECTION = "connection";
-    public static String ERROR = "error";
-    public static String UNKNOWN = "unknown";
+    public static CmeKey RETRY = new CmeKey("retry");
+    public static CmeKey TIMEOUT = new CmeKey("timeout"))));
+    public static CmeKey CONNECTION = new CmeKey("connection");
+    public static CmeKey ERROR = new CmeKey("error");
+    public static CmeKey UNKNOWN = new CmeKey("unknown");
 
-    public CrowmailException(String key, String message, Exception cause, Account a){
+    public CrowmailException(CmeKey key, String message, Exception cause, Account a){
         super(message, cause);
         this.key = key;
         this.a = a;
+    }
+
+    public static class CmeKey {
+        String string;
+        public CmeKey(String string) { this.string = string;}
+        public String toString() { return this.string; }
     }
 }

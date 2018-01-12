@@ -49,30 +49,34 @@ import static android.content.Context.NOTIFICATION_SERVICE;
 public class Fetcher implements QueueItem {
 
     Account a;
-    IMAPFolder folder;
-    Store store;
+    Context context;
+    DBHelper dbh;
+
+    Properties props;
     URLName url;
     Session session;
-    Long FETCH_DELAY = 1000 * 60 * 1L;
-    Context context;
+    Store store;
+    IMAPFolder folder;
+
     String action = "fetch";
     public Integer failCount = 0;
     public Date latestFailure;
-    public Integer MAX_ADJUSTED_FAIL = 5;
-    public Integer RELEASE_TIME = 1000 * 60 * 15;
+    public Long MAX_ADJUSTED_FAIL = 5;
+    public Long RELEASE_TIME = 1000 * 60 * 15;
+    Long FETCH_DELAY = 1000 * 60 * 1L;
 
-    DBHelper dbh;
 
     public Fetcher(Context context, Account a) {
         dbh = new DBHelper(context);
         this.a = a;
         this.context = context;
+        this.props = getProperties();
+        url = getURLName(this.props);
     }
 
     private Properties getProperties() {
         Properties props = System.getProperties();
         if (a.data.imapSslType.equals("STARTTLS")) {
-            Log.d("frow","----STARTTLS");
             props.setProperty("mail.imap.auth", "true");
             props.setProperty("mail.imap.timeout", "5000");
             props.setProperty("mail.imap.connectiontimeout", "5000");
@@ -99,30 +103,11 @@ public class Fetcher implements QueueItem {
     }
 
     private boolean connect() throws CrowmailException {
-        Properties props = getProperties();
-        URLName url = getURLName(props);
-        Long start = new Date().getTime();
-        try {
-            session = Session.getInstance(props);
-            start = new Date().getTime();
-            store = session.getStore(url);
-            start = new Date().getTime();
-            store.connect();
-            start = new Date().getTime();
-            folder = (IMAPFolder) store.getFolder(url);
-            start = new Date().getTime();
-            folder.open(Folder.READ_ONLY);
-            start = new Date().getTime();
-            if(!folder.isOpen()){
-                throw new Exception(String.format("Folder '%s' is not open in Fetcher.connect", folder.getName()));
-            }
-            return true;
-        } catch(Exception e) {
-            Log.d("fcrow","------- Error in Fetcher connect "+ e.getMessage(), e);
-            throw new CrowmailException(CrowmailException.TIMEOUT,
-                    String.format("connect error millis: %d", (new Date().getTime()-start), e, a);
-            return false;
-        }
+        session = Session.getInstance(props);
+        store = session.getStore(url);
+        store.connect();
+        folder = (IMAPFolder) store.getFolder(url);
+        folder.open(Folder.READ_ONLY);
     }
 
     private Long getUidNext(IMAPFolder folder, final String folderName) throws MessagingException {
@@ -130,7 +115,7 @@ public class Fetcher implements QueueItem {
             public Object doCommand(IMAPProtocol p)
             throws ProtocolException {
                Status status = p.status(folderName, new String[]{"uidnext"});
-                return status.uidnext;
+               return status.uidnext;
             }
         });
     }
@@ -152,7 +137,6 @@ public class Fetcher implements QueueItem {
                 .build();
         nmng.notify(msg_group_key, 0, sum);
         for (int i = 0; i < msgs.length; i++) {
-            Log.d("fcrow", String.format("-------- new mail %s:%s", msgs[i].getFrom()[0], msgs[i].getSubject()));
             Notification n = new Notification.Builder(context)
                     .setContentTitle(msgs[i].getFrom()[0].toString())
                     .setContentText(msgs[i].getSubject())
@@ -165,28 +149,30 @@ public class Fetcher implements QueueItem {
     }
 
     public Runnable getTask() throws CrowmailException {
-        final ErrorStatus err = new ErrorStatus();
-        err.key = "fire fetch";
-        err.account_id = a.data._id;
-        err.log(dbh.getWritableDatabase());
-        err.sendNotify(context, false);
+        ErrorStatus.fromStrings(context, dbh.getWritableDatabase(),
+                "fetch fired"+a.data._id.toString(),
+                CrowmailException.UNKNOWN,
+                "",
+                0,
+                false
+        );
 
         final Account acc = this.a;
         return new Runnable() {
+
             @Override
             public void run() {
-                Log.d("fcrow", "--- Fetch ran ---");
                 CrowmailException cme = null;
+                Date startDebug = new Date();
                 try {
-                    if(connect()) {
-                        Long uidnext = getUidNext(folder, "Inbox");
-                        Integer previous = (a.data.uidnext != null) ? a.data.uidnext : 1;
-                        if (previous != uidnext.intValue()) {
-                            Message[] msgs = folder.getMessagesByUID(a.data.uidnext, uidnext - 1);
-                            notifyUpdates(msgs, previous, uidnext);
-                            acc.data.uidnext = uidnext.intValue();
-                            acc.save(dbh.getWritableDatabase());
-                        }
+                    connect();
+                    Long uidnext = getUidNext(folder, "Inbox");
+                    Integer previous = (a.data.uidnext != null) ? a.data.uidnext : 1;
+                    if (previous != uidnext.intValue()) {
+                        Message[] msgs = folder.getMessagesByUID(a.data.uidnext, uidnext - 1);
+                        notifyUpdates(msgs, previous, uidnext);
+                        acc.data.uidnext = uidnext.intValue();
+                        acc.save(dbh.getWritableDatabase());
                     }
                     if(folder != null && folder.isOpen()) {
                         folder.close(false);
@@ -201,16 +187,16 @@ public class Fetcher implements QueueItem {
                             || cause instanceof SocketTimeoutException
                             || cause instanceof ConnectException
                             || cause instanceof SocketException){
-                    cme = new CrowmailException(CrowmailException.TIMEOUT, "Connection error in fetch.", e, a);
+                    cme = new CrowmailException(CrowmailException.TIMEOUT, String.format("Connection error in fetch in:%d", startDebug.getTime()), e, a);
                 } else if (e instanceof MessagingException
                             || e instanceof ProtocolException
                             || e instanceof FolderClosedException) {
                     cme = new CrowmailException(CrowmailException.ERROR, "Severe error in fetch.", e, a);
                 } else {
-                    cme =  new CrowmailException(CrowmailException.UNKNOWN, "Unknown error", e, a);
+                    cme = new CrowmailException(CrowmailException.UNKNOWN, "Unknown error", e, a);
                 }
                 if(cme != null){
-                    ErrorStatus.fromCme(context, dbh.getWritableDatabase(), "fetch:"+a.data._id.toString(), cme);
+                    ErrorStatus.fromCme(context, dbh.getWritableDatabase(), "fetch:"+a.data._id.toString(), cme, true);
                     throw cme;
                 }
             }
@@ -222,7 +208,7 @@ public class Fetcher implements QueueItem {
     }
 
     public String getAction() {
-        return "fetch";
+        return action;
     }
 
     private boolean updateFailureStats() {
