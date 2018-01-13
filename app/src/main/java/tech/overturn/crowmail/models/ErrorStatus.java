@@ -50,6 +50,7 @@ public class ErrorStatus extends Data {
         }
         s.account_id = cme.a.data._id;
         s.stack = stackToString(cme);
+        s.date = new Long(new Date().getTime()).intValue();
         s.log(db);
         if(notify) {
             new CrowNotification(context).send(cme.key.toString(), s.name+'<'+s.cause, Global.CROWMAIL_ERROR+' '+cme.a.data._id, R.drawable.exc, false);
@@ -63,6 +64,7 @@ public class ErrorStatus extends Data {
         s.message = message;
         s.name = "FromString";
         s.account_id = account_id;
+        s.date = new Long(new Date().getTime()).intValue();
         s.log(db);
         if(notify) {
             new CrowNotification(context).send(location+':'+key.toString(), message, Global.CROWMAIL_ERROR+' '+account_id, R.drawable.exc, false);

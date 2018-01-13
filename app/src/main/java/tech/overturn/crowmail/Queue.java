@@ -40,7 +40,7 @@ public class Queue extends Service {
         handlerThread.start();
         Looper looper = handlerThread.getLooper();
         // Create a handler attached to the background message processing thread
-        this.handler = new QueueHandler(looper);
+        this.handler = new QueueHandler(getBaseContext(), dbh.getWritableDatabase(), looper);
     }
 
     @Override

@@ -194,7 +194,6 @@ public class Fetcher implements QueueItem {
         };
     }
 
-
     public Long getDelay() {
         return FETCH_DELAY;
     }
@@ -204,6 +203,9 @@ public class Fetcher implements QueueItem {
     }
 
     private boolean updateFailureStats() {
+        if(this.latestFailure == null) {
+            this.latestFailure = new Date();
+        }
         Date previous = this.latestFailure;
         this.latestFailure = new Date();
         if(this.latestFailure.getTime() - previous.getTime() > RELEASE_TIME){
@@ -215,7 +217,7 @@ public class Fetcher implements QueueItem {
     }
 
     public Long askRetry(CrowmailException e) {
-        if(e.key.equals(CrowmailException.TIMEOUT)) {
+        if(e.key == CrowmailException.TIMEOUT) {
             if(updateFailureStats()) {
                 return this.getDelay();
             }
