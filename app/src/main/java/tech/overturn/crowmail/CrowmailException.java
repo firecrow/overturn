@@ -9,7 +9,7 @@ public class CrowmailException extends RuntimeException {
 
     public Account a;
     public static CmeKey RETRY = new CmeKey("retry");
-    public static CmeKey TIMEOUT = new CmeKey("timeout"))));
+    public static CmeKey TIMEOUT = new CmeKey("timeout");
     public static CmeKey CONNECTION = new CmeKey("connection");
     public static CmeKey ERROR = new CmeKey("error");
     public static CmeKey UNKNOWN = new CmeKey("unknown");

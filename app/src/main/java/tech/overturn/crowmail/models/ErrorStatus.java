@@ -1,5 +1,6 @@
 package tech.overturn.crowmail.models;
 
+import tech.overturn.crowmail.CrowNotification;
 import tech.overturn.crowmail.CrowmailException;
 import tech.overturn.crowmail.Global;
 import tech.overturn.crowmail.R;
@@ -51,7 +52,7 @@ public class ErrorStatus extends Data {
         s.stack = stackToString(cme);
         s.log(db);
         if(notify) {
-            s.sendNotify(context, false);
+            new CrowNotification(context).send(cme.key.toString(), s.name+'<'+s.cause, Global.CROWMAIL_ERROR+' '+cme.a.data._id, R.drawable.exc, false);
         }
     }
 
@@ -64,7 +65,7 @@ public class ErrorStatus extends Data {
         s.account_id = account_id;
         s.log(db);
         if(notify) {
-            s.sendNotify(context, false);
+            new CrowNotification(context).send(key.toString(), message, Global.CROWMAIL_ERROR+' '+account_id, R.drawable.exc, false);
         }
     }
 
@@ -72,38 +73,6 @@ public class ErrorStatus extends Data {
         StringWriter errors = new StringWriter();
         e.printStackTrace(new PrintWriter(errors));
         return errors.toString();
-    }
-
-    private void sendNotify(Context context, Boolean vibrate) {
-        String msg_group_key;
-        if (account_id != null) {
-            msg_group_key = String.format("%s%d", Global.CROWMAIL_ERROR, account_id);
-        } else {
-            msg_group_key = Global.CROWMAIL_ERROR;
-        }
-        NotificationManagerCompat nmng = NotificationManagerCompat.from(context);
-        Notification sum = new Notification.Builder(context)
-                .setSmallIcon(R.drawable.exc)
-                .setGroupSummary(true)
-                .setGroup(msg_group_key)
-                .build()
-                ;
-        nmng.notify(msg_group_key, -1, sum);
-        String key_str = this.key;
-        if(account_id != null) {
-            key_str += " ac:"+account_id.toString();
-        }
-        Notification.Builder nb = new Notification.Builder(context)
-                .setContentTitle(key_str)
-                .setContentText(cause+" "+message)
-                .setSmallIcon(R.drawable.exc)
-                .setGroupSummary(false)
-                .setGroup(msg_group_key)
-                ;
-        if (vibrate) {
-            nb.setVibrate(new long[]{ 1000, 1000, 1000});
-        }
-        nmng.notify(msg_group_key, -(notify_offset++), nb.build());
     }
 
     public Integer getId() {

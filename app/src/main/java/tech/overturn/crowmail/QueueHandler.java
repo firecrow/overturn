@@ -2,6 +2,7 @@ package tech.overturn.crowmail;
 
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
@@ -12,6 +13,10 @@ import tech.overturn.crowmail.QueueItem;
 
 public class QueueHandler extends Handler {
     List<QueueItem> queue;
+
+    public QueueHandler(Looper looper) {
+        super(looper);
+    }
 
     public void enqueue(QueueItem item) throws InterruptedException {
         this.post(genRunnable(item));

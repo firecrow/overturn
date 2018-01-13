@@ -61,8 +61,8 @@ public class Fetcher implements QueueItem {
     String action = "fetch";
     public Integer failCount = 0;
     public Date latestFailure;
-    public Long MAX_ADJUSTED_FAIL = 5;
-    public Long RELEASE_TIME = 1000 * 60 * 15;
+    public Long MAX_ADJUSTED_FAIL = 5L;
+    public Long RELEASE_TIME = 1000 * 60 * 15L;
     Long FETCH_DELAY = 1000 * 60 * 1L;
 
 
@@ -102,7 +102,7 @@ public class Fetcher implements QueueItem {
                 a.data.password);
     }
 
-    private boolean connect() throws CrowmailException {
+    private void connect() throws MessagingException {
         session = Session.getInstance(props);
         store = session.getStore(url);
         store.connect();
@@ -120,66 +120,56 @@ public class Fetcher implements QueueItem {
         });
     }
 
-    private void notifyUpdates(Message[] msgs, Integer previous, Integer uidnext) throws MessagingException {
+    private void fetchMail() throws MessagingException {
+        Long uidnext = getUidNext(folder, "Inbox");
+        Log.d("fcrow", String.format("---- fetching next:%d", uidnext));
+        Integer previous = (a.data.uidnext != null) ? a.data.uidnext : 1;
+        if (previous != uidnext.intValue()) {
+            Message[] msgs = folder.getMessagesByUID(a.data.uidnext, uidnext - 1);
+            notifyUpdates(msgs);
+            a.data.uidnext = uidnext.intValue();
+            a.save(dbh.getWritableDatabase());
+        }
+        if(folder != null && folder.isOpen()) {
+            folder.close(false);
+        }
+        if(store != null && store.isConnected()) {
+            store.close();
+        }
+    }
+
+    private void notifyUpdates(Message[] msgs) throws MessagingException {
         String msg_group_key;
         if (a.data._id != null) {
             msg_group_key = String.format("%s%d", Global.CROWMAIL, a.data._id);
         } else {
             msg_group_key = Global.CROWMAIL;
         }
-
-        NotificationManagerCompat nmng = NotificationManagerCompat.from(context);
-        Notification sum = new Notification.Builder(context)
-                .setSmallIcon(R.drawable.notif)
-                .setContentTitle(a.data.email)
-                .setGroupSummary(true)
-                .setGroup(msg_group_key)
-                .build();
-        nmng.notify(msg_group_key, 0, sum);
         for (int i = 0; i < msgs.length; i++) {
-            Notification n = new Notification.Builder(context)
-                    .setContentTitle(msgs[i].getFrom()[0].toString())
-                    .setContentText(msgs[i].getSubject())
-                    .setSmallIcon(R.drawable.notif)
-                    .setGroupSummary(false)
-                    .setGroup(msg_group_key)
-                    .build();
-            nmng.notify(msg_group_key, previous+i, n);
+            String from = msgs[i].getFrom()[0].toString();
+            String subject = msgs[i].getSubject();
+            Log.d("fcrow", String.format("---- email fetched:%s:%s", from, subject ));
+            new CrowNotification(context).send(from, subject, msg_group_key, R.drawable.notif, false);
         }
     }
 
     public Runnable getTask() throws CrowmailException {
         ErrorStatus.fromStrings(context, dbh.getWritableDatabase(),
                 "fetch fired"+a.data._id.toString(),
-                CrowmailException.UNKNOWN,
+                CrowmailException.UNKNOWN.toString(),
                 "",
                 0,
                 false
         );
 
-        final Account acc = this.a;
         return new Runnable() {
-
             @Override
             public void run() {
                 CrowmailException cme = null;
                 Date startDebug = new Date();
                 try {
                     connect();
-                    Long uidnext = getUidNext(folder, "Inbox");
-                    Integer previous = (a.data.uidnext != null) ? a.data.uidnext : 1;
-                    if (previous != uidnext.intValue()) {
-                        Message[] msgs = folder.getMessagesByUID(a.data.uidnext, uidnext - 1);
-                        notifyUpdates(msgs, previous, uidnext);
-                        acc.data.uidnext = uidnext.intValue();
-                        acc.save(dbh.getWritableDatabase());
-                    }
-                    if(folder != null && folder.isOpen()) {
-                        folder.close(false);
-                    }
-                    if(store != null && store.isConnected()) {
-                        store.close();
-                    }
+                    fetchMail();
                 } catch (Exception e) {
                     Throwable cause;
                     if ((cause = e.getCause()) != null
@@ -188,23 +178,26 @@ public class Fetcher implements QueueItem {
                             || cause instanceof ConnectException
                             || cause instanceof SocketException){
                     cme = new CrowmailException(CrowmailException.TIMEOUT, String.format("Connection error in fetch in:%d", startDebug.getTime()), e, a);
-                } else if (e instanceof MessagingException
-                            || e instanceof ProtocolException
-                            || e instanceof FolderClosedException) {
-                    cme = new CrowmailException(CrowmailException.ERROR, "Severe error in fetch.", e, a);
-                } else {
-                    cme = new CrowmailException(CrowmailException.UNKNOWN, "Unknown error", e, a);
-                }
-                if(cme != null){
-                    ErrorStatus.fromCme(context, dbh.getWritableDatabase(), "fetch:"+a.data._id.toString(), cme, true);
-                    throw cme;
+                    } else if (e instanceof MessagingException
+                                || e instanceof ProtocolException
+                                || e instanceof FolderClosedException) {
+                        cme = new CrowmailException(CrowmailException.ERROR, "Severe error in fetch.", e, a);
+                    } else {
+                        cme = new CrowmailException(CrowmailException.UNKNOWN, "Unknown error", e, a);
+                    }
+                    if(cme != null){
+                        ErrorStatus.fromCme(context, dbh.getWritableDatabase(), "fetch:"+a.data._id.toString(), cme, true);
+                        throw cme;
+                    }
                 }
             }
         };
     }
 
+
     public Long getDelay() {
-        return FETCH_DELAY;
+        return 1000 * 15L;
+        //return FETCH_DELAY;
     }
 
     public String getAction() {

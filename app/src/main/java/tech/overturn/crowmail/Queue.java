@@ -3,7 +3,9 @@ package tech.overturn.crowmail;
 import android.app.IntentService;
 import android.app.Service;
 import android.content.Intent;
+import android.os.HandlerThread;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.SystemClock;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -29,11 +31,16 @@ public class Queue extends Service {
         recieving = new HashMap<Integer, Account>();
         Log.d("fcrow", "---------- service created");
 
-        ErrorStatus.fromCme(getApplicationContext(),
+        ErrorStatus.fromStrings(getApplicationContext(),
                 dbh.getWritableDatabase(),
-                "service creatd",
-                null);
-        this.handler = new QueueHandler();
+                "service created",
+                "status", "", 0, false);
+
+        HandlerThread handlerThread = new HandlerThread("CrowQueueThread");
+        handlerThread.start();
+        Looper looper = handlerThread.getLooper();
+        // Create a handler attached to the background message processing thread
+        this.handler = new QueueHandler(looper);
     }
 
     @Override
@@ -82,10 +89,10 @@ public class Queue extends Service {
     public void onDestroy() {
         super.onDestroy();
         Log.d("fcrow", "---------- service destroyed");
-        ErrorStatus.fromCme(getApplicationContext(),
+        ErrorStatus.fromStrings(getApplicationContext(),
                 dbh.getWritableDatabase(),
                 "service destroyed",
-                null);
+                "status", "", 0, false);
         stopSelf();
     }
 }

@@ -30,9 +30,10 @@ public class DBHelper extends SQLiteOpenHelper {
         db.execSQL(Orm.getCreateTable(ErrorStatus.tableName, ErrorStatus.class));
     }
 
-    public void onUpgrade(SQLiteDatabase db, int old, int version) {}
+    public void onUpgrade(SQLiteDatabase db, int old, int version) {
+    }
 
     public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         onUpgrade(db, oldVersion, newVersion);
     }
-
+}
