@@ -3,6 +3,7 @@ package tech.overturn.crowmail;
 import android.app.Notification;
 import android.content.Context;
 import android.support.v4.app.NotificationManagerCompat;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,27 +25,7 @@ public class CrowNotification {
     }
 
     public void send(String title, String content, String group, Integer iconId, boolean vibrate) {
-        this.title = title;
-        this.content = content;
-        this.group = group;
-        this.iconId = iconId;
-        this.vibrate = vibrate;
-    };
-
-    public Integer getGroupId(String group){
-        Integer idx = groups.indexOf(group);
-        if(idx == -1){
-            groups.add(group);
-            idx = groups.size()-1;
-        }
-        return idx;
-    }
-
-    public Integer getNextId() {
-        return _nextId++;
-    }
-
-    public void send() {
+        Log.d("fcrow", "--- sending notification");
         NotificationManagerCompat nmng = NotificationManagerCompat.from(context);
         Notification sum = new Notification.Builder(context)
                 .setContentTitle(group)
@@ -66,5 +47,18 @@ public class CrowNotification {
             nb.setVibrate(new long[]{ 1000, 1000, 1000});
         }
         nmng.notify(group, getNextId(), nb.build());
+    };
+
+    public Integer getGroupId(String group){
+        Integer idx = groups.indexOf(group);
+        if(idx == -1){
+            groups.add(group);
+            idx = groups.size()-1;
+        }
+        return idx;
+    }
+
+    public Integer getNextId() {
+        return _nextId++;
     }
 }

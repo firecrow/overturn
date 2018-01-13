@@ -34,7 +34,7 @@ public class Queue extends Service {
         ErrorStatus.fromStrings(getApplicationContext(),
                 dbh.getWritableDatabase(),
                 "service created",
-                "status", "", 0, false);
+                "status", "", 0, true);
 
         HandlerThread handlerThread = new HandlerThread("CrowQueueThread");
         handlerThread.start();
@@ -92,7 +92,7 @@ public class Queue extends Service {
         ErrorStatus.fromStrings(getApplicationContext(),
                 dbh.getWritableDatabase(),
                 "service destroyed",
-                "status", "", 0, false);
+                "status", "", 0, true);
         stopSelf();
     }
 }

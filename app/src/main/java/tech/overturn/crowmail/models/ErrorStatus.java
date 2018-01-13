@@ -65,7 +65,7 @@ public class ErrorStatus extends Data {
         s.account_id = account_id;
         s.log(db);
         if(notify) {
-            new CrowNotification(context).send(key.toString(), message, Global.CROWMAIL_ERROR+' '+account_id, R.drawable.exc, false);
+            new CrowNotification(context).send(location+':'+key.toString(), message, Global.CROWMAIL_ERROR+' '+account_id, R.drawable.exc, false);
         }
     }
 

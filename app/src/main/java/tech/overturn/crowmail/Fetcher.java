@@ -196,8 +196,7 @@ public class Fetcher implements QueueItem {
 
 
     public Long getDelay() {
-        return 1000 * 15L;
-        //return FETCH_DELAY;
+        return FETCH_DELAY;
     }
 
     public String getAction() {
