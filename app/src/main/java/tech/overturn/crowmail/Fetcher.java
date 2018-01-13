@@ -63,6 +63,7 @@ public class Fetcher implements QueueItem {
     public Date latestFailure;
     public Long MAX_ADJUSTED_FAIL = 5L;
     public Long RELEASE_TIME = 1000 * 60 * 15L;
+    public Long TIMEOUT = 1000 * 15L;
     Long FETCH_DELAY = 1000 * 60 * 1L;
 
 
@@ -78,15 +79,15 @@ public class Fetcher implements QueueItem {
         Properties props = System.getProperties();
         if (a.data.imapSslType.equals("STARTTLS")) {
             props.setProperty("mail.imap.auth", "true");
-            props.setProperty("mail.imap.timeout", "5000");
-            props.setProperty("mail.imap.connectiontimeout", "5000");
+            props.setProperty("mail.imap.timeout", TIMEOUT.toString());
+            props.setProperty("mail.imap.connectiontimeout", TIMEOUT.toString());
             props.setProperty("mail.imap.socketFactory.class", "tech.overturn.crowmail.SSLCrowFactory");
             props.setProperty("ssl.SocketFactory.provider", "tech.overturn.crowmail.SSLCrowFactory");
             props.setProperty("mail.imap.socketFactory.port", a.data.imapPort.toString());
             props.setProperty("mail.imap.starttls.enable", "true");
         } else {
-            props.setProperty("mail.imaps.timeout", "5000");
-            props.setProperty("mail.imaps.connectiontimeout", "5000");
+            props.setProperty("mail.imaps.timeout", TIMEOUT.toString());
+            props.setProperty("mail.imaps.connectiontimeout", TIMEOUT.toString());
         }
         return props;
     }
@@ -220,6 +221,8 @@ public class Fetcher implements QueueItem {
         if(e.key == CrowmailException.TIMEOUT) {
             if(updateFailureStats()) {
                 return this.getDelay();
+            }else{
+                ErrorStatus.fromCme(context, dbh.getWritableDatabase(), "too manny attempts:"+a.data._id.toString(), e, true);
             }
         }
         return -1L;

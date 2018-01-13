@@ -45,15 +45,20 @@ public class ErrorStatus extends Data {
         s.key = cme.key.toString();
         s.name = cme.getClass().getSimpleName();
         s.message = cme.getMessage();
-        if (cme.getCause() != null) {
-            s.cause = cme.getClass().getSimpleName();
+        Exception e = cme;
+        Throwable cause = null;
+        while(e.getCause() != null) {
+            cause = e.getCause();
+        }
+        if(cause != null) {
+            s.cause = cme.getCause().getClass().getSimpleName();
         }
         s.account_id = cme.a.data._id;
         s.stack = stackToString(cme);
         s.date = new Long(new Date().getTime()).intValue();
         s.log(db);
         if(notify) {
-            new CrowNotification(context).send(cme.key.toString(), s.name+'<'+s.cause, Global.CROWMAIL_ERROR+' '+cme.a.data._id, R.drawable.exc, false);
+            new CrowNotification(context).send(cme.key.toString(), +cme.a.data._id+' '+s.name+'<'+s.cause, Global.CROWMAIL_ERROR+' '+cme.a.data._id, R.drawable.exc, false);
         }
     }
 
