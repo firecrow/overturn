@@ -2,7 +2,14 @@ package tech.overturn.crowmail;
 
 import android.app.IntentService;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.ConnectivityManager.NetworkCallback;
+import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.net.NetworkInfo;
+import android.net.NetworkRequest;
 import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Looper;
@@ -41,6 +48,8 @@ public class Queue extends Service {
         Looper looper = handlerThread.getLooper();
         // Create a handler attached to the background message processing thread
         this.handler = new QueueHandler(getBaseContext(), dbh.getWritableDatabase(), looper);
+
+        listenNetwork(getBaseContext());
     }
 
     @Override
@@ -53,7 +62,7 @@ public class Queue extends Service {
         super.onStartCommand(intent, flags, startId);
         final Service self = this;
 
-        if (intent != null) {
+        if (intent != null && !intent.getAction().equals(Global.START_SERVICE)) {
             Long account_id = intent.getLongExtra("account_id", 0);
             final Account a = Account.byId(dbh.getReadableDatabase(), account_id.intValue());
 
@@ -94,5 +103,45 @@ public class Queue extends Service {
                 "service destroyed",
                 "status", "", 0, true);
         stopSelf();
+    }
+
+    private void listenNetwork(final Context context) {
+
+        NetworkCallback callback = new NetworkCallback() {
+
+            @Override
+            public void onAvailable(Network network) {
+                Log.d("fcrow", String.format("network up"));
+            }
+
+            @Override
+            public void onUnavailable() {
+                Log.d("fcrow", String.format("network unavailable"));
+            }
+
+            @Override
+            public void onLost(Network network) {
+                Log.d("fcrow", String.format("network lost"));
+            }
+
+            @Override
+            public void onCapabilitiesChanged(Network network, NetworkCapabilities cap) {
+                Log.d("fcrow",
+                        String.format("network capabilities changed mobile:%b wifi:%b",
+                                cap.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR),
+                                cap.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+                        )
+                );
+            }
+        };
+
+        NetworkRequest req = new NetworkRequest.Builder()
+                .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+                .build()
+                ;
+
+        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        cm.registerNetworkCallback(req, callback);
     }
 }

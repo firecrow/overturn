@@ -29,7 +29,7 @@ public class QueueHandler extends Handler {
         this.post(genRunnable(item));
     }
 
-    public Runnable genRunnable(final QueueItem item) throws InterruptedException{
+    public Runnable genRunnable(final QueueItem item) {
         final Handler self = this;
         return new Runnable() {
             @Override
@@ -41,7 +41,7 @@ public class QueueHandler extends Handler {
                     } catch (CrowmailException e) {
                         next = item.askRetry(e);
                     }
-                    if(next != null && next != -1) {
+                    if(next != null && next != -1L) {
                         if(next == 0) {
                             self.post(genRunnable(item));
                         }else{
@@ -50,8 +50,6 @@ public class QueueHandler extends Handler {
                     }else{
                         ErrorStatus.fromStrings(context, db, "no retry: "+item.getAction(), "no retry", "", 0, true);
                     }
-                } catch (InterruptedException e) {
-                    Log.d("fcrow", "---- error creating outer runnable");
                 } catch (Exception e) {
                     ErrorStatus.fromStrings(context, db, "run error "+item.getAction(), "error running or queuing item", "", 0, true);
                 }

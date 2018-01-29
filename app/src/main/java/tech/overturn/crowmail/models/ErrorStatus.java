@@ -42,22 +42,38 @@ public class ErrorStatus extends Data {
         ErrorStatus s = new ErrorStatus();
         Log.d("fcrow", "------- Error from cme" + cme.getMessage(), cme);
         s.location = location;
+        Log.d("fcrow", "------- 1");
+        s.location = location;
         s.key = cme.key.toString();
+        Log.d("fcrow", "------- 2");
         s.name = cme.getClass().getSimpleName();
+        Log.d("fcrow", "------- 3");
+        s.name = cme.getClass().getSimpleName();
+        Log.d("fcrow", "------- 4");
         s.message = cme.getMessage();
+        Log.d("fcrow", "------- 5");
         Exception e = cme;
         Throwable cause = null;
-        while(e.getCause() != null) {
-            cause = e.getCause();
+        Log.d("fcrow", "------- 6");
+        cause = e;
+        while(cause.getCause() != null) {
+            cause = cause.getCause();
         }
+        Log.d("fcrow", "------- 7");
         if(cause != null) {
             s.cause = cme.getCause().getClass().getSimpleName();
         }
+        Log.d("fcrow", "------- 8");
         s.account_id = cme.a.data._id;
+        Log.d("fcrow", "------- 8");
         s.stack = stackToString(cme);
+        Log.d("fcrow", "------- 10");
         s.date = new Long(new Date().getTime()).intValue();
+        Log.d("fcrow", "------- 11");
         s.log(db);
+        Log.d("fcrow", String.format("------- notify is:%b", notify));
         if(notify) {
+            Log.d("fcrow", "------- 12");
             new CrowNotification(context).send(cme.key.toString(), +cme.a.data._id+' '+s.name+'<'+s.cause, Global.CROWMAIL_ERROR+' '+cme.a.data._id, R.drawable.exc, false);
         }
     }

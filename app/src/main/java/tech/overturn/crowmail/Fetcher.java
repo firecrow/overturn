@@ -36,6 +36,7 @@ import javax.mail.Session;
 import javax.mail.Store;
 import javax.mail.URLName;
 import javax.net.SocketFactory;
+import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
@@ -124,9 +125,9 @@ public class Fetcher implements QueueItem {
     private void fetchMail() throws MessagingException {
         Long uidnext = getUidNext(folder, "Inbox");
         Log.d("fcrow", String.format("---- fetching next:%d", uidnext));
-        Integer previous = (a.data.uidnext != null) ? a.data.uidnext : 1;
+        Integer previous = (a.data.uidnext != null && a.data.uidnext != 0) ? a.data.uidnext : 1;
         if (previous != uidnext.intValue()) {
-            Message[] msgs = folder.getMessagesByUID(a.data.uidnext, uidnext - 1);
+            Message[] msgs = folder.getMessagesByUID(previous, uidnext - 1);
             notifyUpdates(msgs);
             a.data.uidnext = uidnext.intValue();
             a.save(dbh.getWritableDatabase());
@@ -177,8 +178,9 @@ public class Fetcher implements QueueItem {
                             && cause instanceof ConnectionException
                             || cause instanceof SocketTimeoutException
                             || cause instanceof ConnectException
+                            || cause instanceof SSLHandshakeException
                             || cause instanceof SocketException){
-                    cme = new CrowmailException(CrowmailException.TIMEOUT, String.format("Connection error in fetch in:%d", startDebug.getTime()), e, a);
+                        cme = new CrowmailException(CrowmailException.TIMEOUT, String.format("Connection error in fetch in:%d", startDebug.getTime()), e, a);
                     } else if (e instanceof MessagingException
                                 || e instanceof ProtocolException
                                 || e instanceof FolderClosedException) {
@@ -218,13 +220,13 @@ public class Fetcher implements QueueItem {
     }
 
     public Long askRetry(CrowmailException e) {
+        Log.d("fcrow", "--- ask retry");
         if(e.key == CrowmailException.TIMEOUT) {
             if(updateFailureStats()) {
                 return this.getDelay();
-            }else{
-                ErrorStatus.fromCme(context, dbh.getWritableDatabase(), "too manny attempts:"+a.data._id.toString(), e, true);
             }
         }
+        ErrorStatus.fromCme(context, dbh.getWritableDatabase(), "too manny attempts:"+a.data._id.toString(), e, true);
         return -1L;
     }
 }
