@@ -22,19 +22,5 @@ public class Receiver extends BroadcastReceiver {
             return;
         }
         Log.d("fcrow", String.format("--------------- receiver action:", intent.getAction()));
-        ConnectivityManager cm
-                = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo info = cm.getActiveNetworkInfo();
-        NetworkInfo.State state = info.getState();
-        Global.setBroadNetwork(context, state);
-
-        /*
-        new Handler().post(new Runnable(){
-            @Override
-            public void run(){
-                Toast.makeText(context, "hi from reciever", Toast.LENGTH_LONG).show();
-            }
-        });
-        */
     }
 }

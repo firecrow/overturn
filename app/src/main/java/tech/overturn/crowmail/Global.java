@@ -16,20 +16,21 @@ public class Global {
     public static final String COMPLETE = "complete";
     public static final String GLOBAL_BROADCAST = "tech.overturn.crowmail.GLOBAL_BROADCAST";
     public static final String START_SERVICE = "tech.overturn.crowmail.START_SERVICE";
+    public static final String NETWORK_STATUS = "tech.overturn.crowmail.NETWORK_STATUS";
 
-    public static NetworkInfo.State networkStatus = NetworkInfo.State.DISCONNECTED;
+    public static boolean networkUp = false;
 
-    public static void sendBroadcast(Context ctx, Bundle bundle) {
-        Intent intent = new Intent(GLOBAL_BROADCAST);
-        intent.putExtras(bundle);
-        ctx.sendBroadcast(intent);
-    }
-
-    public static void setBroadNetwork(Context ctx, NetworkInfo.State status) {
-        Log.d("fcrow", String.format("---- network has changed:%b", status == NetworkInfo.State.CONNECTED ));
-        networkStatus = status;
+    public static void setNetworkUp(Context context, boolean up) {
+        Log.d("fcrow", String.format("---- network has changed:%b", up));
+        if(networkUp == up){
+            return;
+        }
+        networkUp = up;
+        Intent intent = new Intent();
+        intent.setAction(NETWORK_STATUS);
         Bundle b = new Bundle();
-        b.putSerializable("networkStatus", status);
-        sendBroadcast(ctx, b);
+        b.putBoolean("up", up);
+        intent.putExtras(b);
+        context.sendBroadcast(intent);
     }
 }

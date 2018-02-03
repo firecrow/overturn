@@ -49,7 +49,7 @@ public class Queue extends Service {
         // Create a handler attached to the background message processing thread
         this.handler = new QueueHandler(getBaseContext(), dbh.getWritableDatabase(), looper);
 
-        listenNetwork(getBaseContext());
+        NetworkListen.listen(getApplicationContext());
     }
 
     @Override
@@ -105,43 +105,4 @@ public class Queue extends Service {
         stopSelf();
     }
 
-    private void listenNetwork(final Context context) {
-
-        NetworkCallback callback = new NetworkCallback() {
-
-            @Override
-            public void onAvailable(Network network) {
-                Log.d("fcrow", String.format("network up"));
-            }
-
-            @Override
-            public void onUnavailable() {
-                Log.d("fcrow", String.format("network unavailable"));
-            }
-
-            @Override
-            public void onLost(Network network) {
-                Log.d("fcrow", String.format("network lost"));
-            }
-
-            @Override
-            public void onCapabilitiesChanged(Network network, NetworkCapabilities cap) {
-                Log.d("fcrow",
-                        String.format("network capabilities changed mobile:%b wifi:%b",
-                                cap.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR),
-                                cap.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
-                        )
-                );
-            }
-        };
-
-        NetworkRequest req = new NetworkRequest.Builder()
-                .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
-                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
-                .build()
-                ;
-
-        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        cm.registerNetworkCallback(req, callback);
-    }
 }

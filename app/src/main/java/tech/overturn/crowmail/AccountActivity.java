@@ -1,6 +1,9 @@
 package tech.overturn.crowmail;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -16,6 +19,7 @@ public class AccountActivity extends AppCompatActivity {
 
     public Account a;
     DBHelper dbh;
+    LocalReciever localReciever;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,6 +64,17 @@ public class AccountActivity extends AppCompatActivity {
         blink.setOnClickListener(back);
         slink.setOnClickListener(send);
         flink.setOnClickListener(fetch);
+
+        localReciever = new LocalReciever();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Global.NETWORK_STATUS);
+        registerReceiver(localReciever, filter);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(localReciever);
     }
 
     @Override
@@ -100,5 +115,13 @@ public class AccountActivity extends AppCompatActivity {
         Intent intent = new Intent(this, SendActivity.class);
         intent.putExtra("account_id", id);
         startActivity(intent);
+    }
+
+    private class LocalReciever extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(final Context context, Intent intent) {
+            Log.d("fcrow", String.format("----- account recieved action:", intent.getAction()));
+        }
     }
 }
