@@ -10,6 +10,7 @@ import android.os.Handler;
 import android.support.v7.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
+import android.view.InputQueue;
 import android.widget.Toast;
 
 import com.sun.mail.iap.ConnectionException;
@@ -22,8 +23,10 @@ import com.sun.mail.imap.protocol.Status;
 import java.net.ConnectException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeoutException;
@@ -65,7 +68,8 @@ public class Fetcher implements QueueItem {
     public Long MAX_ADJUSTED_FAIL = 5L;
     public Long RELEASE_TIME = 1000 * 60 * 15L;
     public Long TIMEOUT = 1000 * 15L;
-    Long FETCH_DELAY = 1000 * 60 * 1L;
+    //Long FETCH_DELAY = 1000 * 60 * 1L;
+    Long FETCH_DELAY = 1000 * 15L;
 
 
     public Fetcher(Context context, Account a) {
@@ -155,6 +159,13 @@ public class Fetcher implements QueueItem {
         }
     }
 
+    public List<QItemReq> getReqs()
+    {
+       List<QItemReq> reqs = new ArrayList<QItemReq>();
+       reqs.add(new QItemReqNetworkUp());
+       return reqs;
+    }
+
     public Runnable getTask() throws CrowmailException {
         ErrorStatus.fromStrings(context, dbh.getWritableDatabase(),
                 "fetch fired"+a.data._id.toString(),
@@ -184,14 +195,12 @@ public class Fetcher implements QueueItem {
                     } else if (e instanceof MessagingException
                                 || e instanceof ProtocolException
                                 || e instanceof FolderClosedException) {
-                        cme = new CrowmailException(CrowmailException.ERROR, "Severe error in fetch.", e, a);
+                        cme = new CrowmailException(CrowmailException.ERROR, "Server error in fetch.", e, a);
                     } else {
                         cme = new CrowmailException(CrowmailException.UNKNOWN, "Unknown error", e, a);
                     }
-                    if(cme != null){
-                        ErrorStatus.fromCme(context, dbh.getWritableDatabase(), "fetch:"+a.data._id.toString(), cme, true);
-                        throw cme;
-                    }
+                    ErrorStatus.fromCme(context, dbh.getWritableDatabase(), "fetch:"+a.data._id.toString(), cme, true);
+                    throw cme;
                 }
             }
         };
@@ -216,15 +225,14 @@ public class Fetcher implements QueueItem {
         }else {
             this.failCount++;
         }
+        Log.d("fcrow", String.format("Fetcher.failCount:%d", this.failCount));
         return this.failCount <= MAX_ADJUSTED_FAIL;
     }
 
     public Long askRetry(CrowmailException e) {
         Log.d("fcrow", "--- ask retry");
-        if(e.key == CrowmailException.TIMEOUT) {
-            if(updateFailureStats()) {
-                return this.getDelay();
-            }
+        if(updateFailureStats()) {
+            return this.getDelay();
         }
         ErrorStatus.fromCme(context, dbh.getWritableDatabase(), "too manny attempts:"+a.data._id.toString(), e, true);
         return -1L;

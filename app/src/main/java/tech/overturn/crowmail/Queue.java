@@ -34,7 +34,7 @@ public class Queue extends Service {
 
     @Override
     public void onCreate() {
-        dbh = new DBHelper(getBaseContext());
+        dbh = new DBHelper(getApplicationContext());
         recieving = new HashMap<Integer, Account>();
         Log.d("fcrow", "---------- service created");
 
@@ -47,7 +47,7 @@ public class Queue extends Service {
         handlerThread.start();
         Looper looper = handlerThread.getLooper();
         // Create a handler attached to the background message processing thread
-        this.handler = new QueueHandler(getBaseContext(), dbh.getWritableDatabase(), looper);
+        this.handler = new QueueHandler(getApplicationContext(), dbh.getWritableDatabase(), looper);
 
         NetworkListen.listen(getApplicationContext());
     }
