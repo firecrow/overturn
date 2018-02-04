@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import tech.overturn.crowmail.QueueItem;
-import tech.overturn.crowmail.models.ErrorStatus;
+import tech.overturn.crowmail.models.Status;
 
 public class QueueHandler extends Handler {
     List<QueueItem> queue;
@@ -63,7 +63,7 @@ public class QueueHandler extends Handler {
                     Log.d("fcrow", "----- reqs or wait new after");
                 } else {
                     Log.d("fcrow", "----- reqs or wait existing");
-                    list = reqsAwaiting.get(req.toString());
+                    list = reqsAwaiting.get(req.getTrigger());
                 }
                 list.add(item);
                 failures++;
@@ -108,10 +108,10 @@ public class QueueHandler extends Handler {
                             self.postDelayed(genRunnable(item), next);
                         }
                     }else{
-                        ErrorStatus.fromStrings(context, db, "no retry: "+item.getAction(), "no retry", "", 0, true);
+                        Status.fromStrings(context, db, Status.ERROR_TYPE, null, "no retry: ", "", true);
                     }
                 } catch (Exception e) {
-                    ErrorStatus.fromStrings(context, db, " run error ", item.getAction()+">"+e.getClass().getName(), "", 0, true);
+                    Status.fromStrings(context, db,  Status.ERROR_TYPE, null, "run error", item.getAction()+">"+e.getClass().getName(), true);
                 }
             }
         };

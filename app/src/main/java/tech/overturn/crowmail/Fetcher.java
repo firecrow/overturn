@@ -45,7 +45,7 @@ import javax.net.ssl.SSLSocketFactory;
 
 import tech.overturn.crowmail.models.Account;
 import tech.overturn.crowmail.models.CrowMessage;
-import tech.overturn.crowmail.models.ErrorStatus;
+import tech.overturn.crowmail.models.Status;
 import tech.overturn.crowmail.QueueItem;
 
 import static android.content.Context.NOTIFICATION_SERVICE;
@@ -65,8 +65,8 @@ public class Fetcher implements QueueItem {
     String action = "fetch";
     public Integer failCount = 0;
     public Date latestFailure;
-    public Long MAX_ADJUSTED_FAIL = 5L;
-    public Long RELEASE_TIME = 1000 * 60 * 15L;
+    public Long MAX_ADJUSTED_FAIL = 15L;
+    public Long RELEASE_TIME = 1000 * 60 * 2L;
     public Long TIMEOUT = 1000 * 15L;
     //Long FETCH_DELAY = 1000 * 60 * 1L;
     Long FETCH_DELAY = 1000 * 15L;
@@ -167,14 +167,13 @@ public class Fetcher implements QueueItem {
     }
 
     public Runnable getTask() throws CrowmailException {
-        ErrorStatus.fromStrings(context, dbh.getWritableDatabase(),
-                "fetch fired"+a.data._id.toString(),
-                CrowmailException.UNKNOWN.toString(),
+        Status.fromStrings(context, dbh.getWritableDatabase(),
+                Status.INFO_TYPE,
+                a.data._id,
+                "fetch task created", 
                 "",
-                0,
                 false
-        );
-
+        ); 
         return new Runnable() {
             @Override
             public void run() {
@@ -199,7 +198,7 @@ public class Fetcher implements QueueItem {
                     } else {
                         cme = new CrowmailException(CrowmailException.UNKNOWN, "Unknown error", e, a);
                     }
-                    ErrorStatus.fromCme(context, dbh.getWritableDatabase(), "fetch:"+a.data._id.toString(), cme, true);
+                    Status.fromCme(context, dbh.getWritableDatabase(), a.data._id, "fetch error", cme, true);
                     throw cme;
                 }
             }
@@ -234,7 +233,7 @@ public class Fetcher implements QueueItem {
         if(updateFailureStats()) {
             return this.getDelay();
         }
-        ErrorStatus.fromCme(context, dbh.getWritableDatabase(), "too manny attempts:"+a.data._id.toString(), e, true);
+        Status.fromCme(context, dbh.getWritableDatabase(), a.data._id, "too manny failures", e, true);
         return -1L;
     }
 }

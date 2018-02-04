@@ -18,6 +18,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import static java.lang.Math.toIntExact;
@@ -47,6 +48,10 @@ public class Orm {
                 }
                 if (f.getType().equals(Integer.class)) {
                     f.set(obj, cursor.getInt(idx));
+                } else if (f.getType().equals(Long.class)) {
+                    f.set(obj, cursor.getLong(idx));
+                } else if (f.getType().equals(Date.class)) {
+                    f.set(obj, new Date(cursor.getLong(idx)));
                 } else if (f.getType().equals(String.class)) {
                     f.set(obj, cursor.getString(idx));
                 }
@@ -70,6 +75,8 @@ public class Orm {
             }
             query += ", "+ f.getName().toLowerCase();
             if(f.getType().equals(Integer.class)) {
+                query += " INT ";
+            }else if(f.getType().equals(Long.class) || f.getType().equals(Date.class)) {
                 query += " INTEGER ";
             }else if(f.getType().equals(String.class)) {
                 query += " TEXT ";
@@ -92,6 +99,9 @@ public class Orm {
                 Object value = f.get(obj);
                 String declaring = f.getDeclaringClass().getName();
                 if(className.equals(declaring) && value != null) {
+                    if(value.getClass() == Date.class) {
+                        value = ((Date)value).getTime();
+                    }
                     vals.put(f.getName(), value.toString());
                 }
             } catch (IllegalAccessException e){
@@ -115,6 +125,12 @@ public class Orm {
                 if(!Modifier.isStatic(f.getModifiers()) && fname != "_id" && fname != "serialVersionUID" && f.get(obj) != null) {
                     if(f.getType() == Integer.class) {
                         Integer value = (Integer) f.get(obj);
+                        if(value != null) {
+                            vals.put(fname, value.toString());
+                        }
+                    }
+                    else if(f.getType() == Date.class) {
+                        Long value = ((Date) f.get(obj)).getTime();
                         if(value != null) {
                             vals.put(fname, value.toString());
                         }

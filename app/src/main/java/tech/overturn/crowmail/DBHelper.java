@@ -11,10 +11,10 @@ import tech.overturn.crowmail.models.CrowMessage;
 import tech.overturn.crowmail.models.CrowMessageData;
 import tech.overturn.crowmail.models.Email;
 import tech.overturn.crowmail.models.EmailToMsg;
-import tech.overturn.crowmail.models.ErrorStatus;
+import tech.overturn.crowmail.models.Status;
 
 public class DBHelper extends SQLiteOpenHelper {
-    public static final int DB_VERSION = 6;
+    public static final int DB_VERSION = 7;
     public static final String DB_FNAME = "Crowmail.db";
 
     DBHelper(Context ctx) {
@@ -27,10 +27,10 @@ public class DBHelper extends SQLiteOpenHelper {
         db.execSQL(Orm.getCreateTable(CrowMessage.tableName, CrowMessageData.class));
         db.execSQL(Orm.getCreateTable(Email.tableName, Email.class));
         db.execSQL(Orm.getCreateTable(EmailToMsg.tableName, EmailToMsg.class));
-        db.execSQL(Orm.getCreateTable(ErrorStatus.tableName, ErrorStatus.class));
     }
 
     public void onUpgrade(SQLiteDatabase db, int old, int version) {
+        db.execSQL(Orm.getCreateTable(Status.tableName, Status.class));
     }
 
     public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {

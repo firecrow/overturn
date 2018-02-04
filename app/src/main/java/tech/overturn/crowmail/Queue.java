@@ -24,7 +24,7 @@ import java.util.Map;
 
 import tech.overturn.crowmail.models.Account;
 import tech.overturn.crowmail.models.CrowMessage;
-import tech.overturn.crowmail.models.ErrorStatus;
+import tech.overturn.crowmail.models.Status;
 
 public class Queue extends Service {
 
@@ -38,10 +38,13 @@ public class Queue extends Service {
         recieving = new HashMap<Integer, Account>();
         Log.d("fcrow", "---------- service created");
 
-        ErrorStatus.fromStrings(getApplicationContext(),
+        Status.fromStrings(getApplicationContext(),
                 dbh.getWritableDatabase(),
+                Status.INFO_TYPE,
+                null, 
                 "service created",
-                "status", "", 0, true);
+                "", 
+                true);
 
         HandlerThread handlerThread = new HandlerThread("CrowQueueThread");
         handlerThread.start();
@@ -98,10 +101,13 @@ public class Queue extends Service {
     public void onDestroy() {
         super.onDestroy();
         Log.d("fcrow", "---------- service destroyed");
-        ErrorStatus.fromStrings(getApplicationContext(),
+        Status.fromStrings(getApplicationContext(),
                 dbh.getWritableDatabase(),
+                Status.INFO_TYPE,
+                null,
                 "service destroyed",
-                "status", "", 0, true);
+                "",
+                true);
         stopSelf();
     }
 
