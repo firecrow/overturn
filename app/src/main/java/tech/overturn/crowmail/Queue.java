@@ -85,8 +85,7 @@ public class Queue extends Service {
                     Log.d("fcrow", String.format("--------------- already recieving"));
                 } else {
                     try {
-                        recieving.put(account_id.intValue(), a);
-                        this.handler.enqueue(new Fetcher(getApplicationContext(), a));
+                        new Fetcher(getApplicationContext(), a)new Fetcher(getApplicationContext(), a).loop();
                     } catch (InterruptedException e) {
                         Log.d("fcrow", String.format("--------------- error with item enqueue"));
                     }

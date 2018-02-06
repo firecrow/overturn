@@ -20,17 +20,19 @@ public class Global {
 
     public static boolean networkUp = false;
 
+    public static List<Runnable> onNetworkUpTrue = new ArrayList<Runnable>();
+
     public static void setNetworkUp(Context context, boolean up) {
         Log.d("fcrow", String.format("---- network has changed:%b", up));
-        if(networkUp == up){
+        if (networkUp == up) {
             return;
         }
+        if (up) {
+            for(Runnable runner: onNetworkUpTrue) {
+                runner.run();
+            }
+            onNetworkUpTrue = new ArrayList<Runnable>();
+        }
         networkUp = up;
-        Intent intent = new Intent();
-        intent.setAction(NETWORK_STATUS);
-        Bundle b = new Bundle();
-        b.putBoolean("up", up);
-        intent.putExtras(b);
-        context.sendBroadcast(intent);
     }
 }

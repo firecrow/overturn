@@ -46,11 +46,10 @@ import javax.net.ssl.SSLSocketFactory;
 import tech.overturn.crowmail.models.Account;
 import tech.overturn.crowmail.models.CrowMessage;
 import tech.overturn.crowmail.models.Status;
-import tech.overturn.crowmail.QueueItem;
 
 import static android.content.Context.NOTIFICATION_SERVICE;
 
-public class Fetcher implements QueueItem {
+public class Fetcher {
 
     Account a;
     Context context;
@@ -68,8 +67,7 @@ public class Fetcher implements QueueItem {
     public Long MAX_ADJUSTED_FAIL = 15L;
     public Long RELEASE_TIME = 1000 * 60 * 2L;
     public Long TIMEOUT = 1000 * 15L;
-    //Long FETCH_DELAY = 1000 * 60 * 1L;
-    Long FETCH_DELAY = 1000 * 15L;
+    //Long FETCH_DELAY = 1000 * 60 * 1L; Long FETCH_DELAY = 1000 * 15L;
 
 
     public Fetcher(Context context, Account a) {
@@ -166,7 +164,7 @@ public class Fetcher implements QueueItem {
        return reqs;
     }
 
-    public Runnable getTask() throws CrowmailException {
+    public loop(){
         Status.fromStrings(context, dbh.getWritableDatabase(),
                 Status.INFO_TYPE,
                 a.data._id,
@@ -174,35 +172,49 @@ public class Fetcher implements QueueItem {
                 "",
                 false
         ); 
-        return new Runnable() {
+        final Runnable runnable = new Runnable() {
+            final Account _account = a;
             @Override
             public void run() {
-                CrowmailException cme = null;
-                Date startDebug = new Date();
-                try {
-                    connect();
-                    fetchMail();
-                } catch (Exception e) {
-                    Throwable cause;
-                    if ((cause = e.getCause()) != null
-                            && cause instanceof ConnectionException
-                            || cause instanceof SocketTimeoutException
-                            || cause instanceof ConnectException
-                            || cause instanceof SSLHandshakeException
-                            || cause instanceof SocketException){
-                        cme = new CrowmailException(CrowmailException.TIMEOUT, String.format("Connection error in fetch in:%d", startDebug.getTime()), e, a);
-                    } else if (e instanceof MessagingException
-                                || e instanceof ProtocolException
-                                || e instanceof FolderClosedException) {
-                        cme = new CrowmailException(CrowmailException.ERROR, "Server error in fetch.", e, a);
-                    } else {
-                        cme = new CrowmailException(CrowmailException.UNKNOWN, "Unknown error", e, a);
+                while (!Thread.interrupted()) {
+                    if(!Global.hasNetwork){
+                        synchronized Global.onNetworkUpTrue.add(new Runnable() {
+                            @Override
+                            public void run() {
+                                new Fetcher(this.context, _account).loop();
+                            }
+                        });
                     }
-                    Status.fromCme(context, dbh.getWritableDatabase(), a.data._id, "fetch error", cme, true);
-                    throw cme;
+                    CrowmailException cme = null;
+                    Date startDebug = new Date();
+                    try {
+                        connect();
+                        fetchMail();
+                    } catch (Exception e) {
+                        Throwable cause;
+                        if ((cause = e.getCause()) != null
+                                && cause instanceof ConnectionException
+                                || cause instanceof SocketTimeoutException
+                                || cause instanceof ConnectException
+                                || cause instanceof SSLHandshakeException
+                                || cause instanceof SocketException){
+                            cme = new CrowmailException(CrowmailException.TIMEOUT, String.format("Connection error in fetch in:%d", startDebug.getTime()), e, a);
+                        } else if (e instanceof MessagingException
+                                    || e instanceof ProtocolException
+                                    || e instanceof FolderClosedException) {
+                            cme = new CrowmailException(CrowmailException.ERROR, "Server error in fetch.", e, a);
+                        } else {
+                            cme = new CrowmailException(CrowmailException.UNKNOWN, "Unknown error", e, a);
+                        }
+                        Status.fromCme(context, dbh.getWritableDatabase(), a.data._id, "fetch error", cme, true);
+                        throw cme;
+                    }
+                    Thread.sleep(FETCH_DELAY);
                 }
+                    
             }
         };
+        new Thread(runnable).start();
     }
 
     public Long getDelay() {
