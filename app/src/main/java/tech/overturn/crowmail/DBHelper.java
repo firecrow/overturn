@@ -14,7 +14,7 @@ import tech.overturn.crowmail.models.EmailToMsg;
 import tech.overturn.crowmail.models.Ledger;
 
 public class DBHelper extends SQLiteOpenHelper {
-    public static final int DB_VERSION = 7;
+    public static final int DB_VERSION = 8;
     public static final String DB_FNAME = "Crowmail.db";
 
     DBHelper(Context ctx) {

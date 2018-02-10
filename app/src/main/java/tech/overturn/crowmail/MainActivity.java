@@ -55,7 +55,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onResume(){
         super.onResume();
-        List<AccountData> addata = (List<AccountData>) Orm.byQuery(dbh.getReadableDatabase(), Account.tableName, AccountData.class, null, null);
+        List<AccountData> addata = (List<AccountData>) Orm.byQuery(dbh.getReadableDatabase(),
+                Account.tableName, AccountData.class, null, null, null);
 
         lview = (ListView) findViewById(R.id.accountList);
         AccountAdapter adapter = (AccountAdapter)lview.getAdapter();

@@ -192,17 +192,23 @@ public class Orm {
         return obj;
     }
 
-    public static List<? extends Data> byQuery(SQLiteDatabase db, String table, Class<? extends Data> cls, String where, String order) {
+    public static List<? extends Data> byQuery(SQLiteDatabase db,
+            String table,
+            Class<? extends Data> cls,
+            String where,
+            String[] args,
+            String order
+    ) {
         String[] cols = getSelectColumns(cls);
         List<Data> objs = new ArrayList<Data>();
         Cursor cursor = db.query(
                 table,
                 cols,
+                where,
+                args,
                 null,
                 null,
-                null,
-                null,
-                null
+                order
         );
         while(cursor.moveToNext()) {
             objs.add(objFromCursor(cursor, cols, cls));

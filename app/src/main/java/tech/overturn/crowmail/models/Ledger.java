@@ -21,7 +21,7 @@ import tech.overturn.crowmail.Orm;
 
 
 public class Ledger extends Data {
-    public static String tableName  = "status";
+    public static String tableName  = "ledger";
     public Integer _id;
     public Integer account_id;
     public Date date;

@@ -41,6 +41,7 @@ public class AccountActivity extends AppCompatActivity {
         TextView blink = (TextView)findViewById(R.id.backLink);
         TextView slink = (TextView)findViewById(R.id.sendLink);
         TextView flink = (TextView)findViewById(R.id.fetchLink);
+        TextView llink = (TextView)findViewById(R.id.ledgerLink);
         View.OnClickListener back = new View.OnClickListener() {
             public void onClick(View v) {
                 goToMain();
@@ -60,10 +61,16 @@ public class AccountActivity extends AppCompatActivity {
                 startService(fetchItem);
             }
         };
+        View.OnClickListener ledger = new View.OnClickListener() {
+            public void onClick(View v) {
+                goToLedger(new Long(a.data._id));
+            }
+        };
         btn.setOnClickListener(back);
         blink.setOnClickListener(back);
         slink.setOnClickListener(send);
         flink.setOnClickListener(fetch);
+        llink.setOnClickListener(ledger);
 
         localReciever = new LocalReciever();
         IntentFilter filter = new IntentFilter();
@@ -110,6 +117,12 @@ public class AccountActivity extends AppCompatActivity {
 
     public void goToMain() {
         startActivity(new Intent(this, MainActivity.class));
+    }
+    public void goToLedger(Long id) {
+        Intent intent = new Intent(this, LedgerActivity.class);
+        Log.d("fcrow",String.format("go to ledger %d", id));
+        intent.putExtra("account_id", id.longValue());
+        startActivity(intent);
     }
     public void goToSend(long id) {
         Intent intent = new Intent(this, SendActivity.class);
