@@ -118,12 +118,14 @@ public class AccountActivity extends AppCompatActivity {
     public void goToMain() {
         startActivity(new Intent(this, MainActivity.class));
     }
+
     public void goToLedger(Long id) {
         Intent intent = new Intent(this, LedgerActivity.class);
         Log.d("fcrow",String.format("go to ledger %d", id));
         intent.putExtra("account_id", id.longValue());
         startActivity(intent);
     }
+
     public void goToSend(long id) {
         Intent intent = new Intent(this, SendActivity.class);
         intent.putExtra("account_id", id);

@@ -30,6 +30,10 @@
         <activity
             android:name=".LedgerActivity"
             android:label="@string/title_activity_ledger"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".LedgerDetailActivity"
+            android:label="@string/title_activity_ledger_detail"
             android:theme="@style/AppTheme.NoActionBar"></activity>
     </application>
 

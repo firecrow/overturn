@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">Crowmail</string>
     <string name="title_activity_ledger">LedgerActivity</string>
+    <string name="title_activity_ledger_detail">LedgerDetailActivity</string>
 </resources>
