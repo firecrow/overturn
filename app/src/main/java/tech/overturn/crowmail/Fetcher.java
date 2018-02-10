@@ -127,9 +127,10 @@ public class Fetcher {
 
     private Long fetchMail() throws MessagingException {
         Long uidnext = getUidNext(folder, "Inbox");
-        Log.d("fcrow", String.format("---- fetching next:%d", uidnext));
+        Log.d("fcrow", String.format("---- uid next %d", uidnext));
         Integer previous = (a.data.uidnext != null && a.data.uidnext != 0) ? a.data.uidnext : 1;
         if (previous != uidnext.intValue()) {
+            Log.d("fcrow", String.format("---- fetching %d..%d", previous, uidnext));
             Message[] msgs = folder.getMessagesByUID(previous, uidnext - 1);
             notifyUpdates(msgs);
             a.data.uidnext = uidnext.intValue();
@@ -145,6 +146,7 @@ public class Fetcher {
     }
 
     private void notifyUpdates(Message[] msgs) throws MessagingException {
+        Log.d("fcrow", String.format("---- %d emails", msgs.length));
         String msg_group_key;
         if (a.data._id != null) {
             msg_group_key = String.format("%s%d", Global.CROWMAIL, a.data._id);
@@ -154,7 +156,6 @@ public class Fetcher {
         for (int i = 0; i < msgs.length; i++) {
             String from = msgs[i].getFrom()[0].toString();
             String subject = msgs[i].getSubject();
-            Log.d("fcrow", String.format("---- email fetched:%s:%s", from, subject ));
             new CrowNotification(context).send(from, subject, msg_group_key, R.drawable.notif, false);
         }
     }
@@ -193,7 +194,7 @@ public class Fetcher {
                     try {
                         connect();
                         Long uidnext = fetchMail();
-                        a.setFetchLedger(dbh.getWritableDatabase(), uidnext);
+                        a.setFetchLedger(dbh.getWritableDatabase(), context, uidnext);
                     } catch (Exception e) {
                         Throwable cause;
                         if ((cause = e.getCause()) != null
@@ -211,7 +212,6 @@ public class Fetcher {
                             cme = new CrowmailException(CrowmailException.UNKNOWN, "Unknown error", e, a);
                         }
                         Ledger.fromCme(context, dbh.getWritableDatabase(), "fetch error", cme, true);
-                        throw cme;
                     }
                     try {
                         Thread.sleep(Fetcher.FETCH_DELAY);
@@ -255,7 +255,7 @@ public class Fetcher {
         if(updateFailureStats()) {
             return this.getDelay();
         }
-        Ledger.fromCme(context, dbh.getWritableDatabase(), "too manny failures", e, true);
+        Ledger.fromCme(context, dbh.getWritableDatabase(), "too manny failures", e, false);
         return -1L;
     }
 }

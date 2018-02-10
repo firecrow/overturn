@@ -6,6 +6,7 @@ import tech.overturn.crowmail.Global;
 import tech.overturn.crowmail.R;
 import android.app.Notification;
 import android.content.Context;
+import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.constraint.solver.Goal;
 import android.support.v4.app.NotificationCompat;
@@ -33,10 +34,13 @@ public class Ledger extends Data {
     public static String ERROR_TYPE = "error";
     public static String INFO_TYPE = "info";
     public static String LATEST_FETCH_TYPE = "latest_fetch";
+    public static String LEDGER_UPDATED = "tech.overturn.crowmail.LEDGER_UPDATED";
 
-    public void log(SQLiteDatabase db) {
+    public void log(SQLiteDatabase db, Context context) {
         Log.d("fcrow", toString());
         Orm.insert(db, Ledger.tableName, this);
+        Intent intent = new Intent(LEDGER_UPDATED);
+        context.sendBroadcast(intent);
     }
 
     public String toString() {
@@ -54,7 +58,7 @@ public class Ledger extends Data {
         s.date = new Date();
         s.description = stackToString(cme);
         s.type = ERROR_TYPE;
-        s.log(db);
+        s.log(db, context);
         if(notify) {
             new CrowNotification(context).send(s.type, s.textval, Global.CROWMAIL_ERROR+' '+cme.a.data._id, R.drawable.exc, false);
         }
@@ -67,7 +71,7 @@ public class Ledger extends Data {
         s.description = description;
         s.account_id = account_id;
         s.date = new Date();
-        s.log(db);
+        s.log(db, context);
         if(notify) {
             new CrowNotification(context).send(s.type, s.textval, Global.CROWMAIL_ERROR+' '+account_id, R.drawable.exc, false);
         }

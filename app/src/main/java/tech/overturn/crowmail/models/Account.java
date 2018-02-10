@@ -1,5 +1,6 @@
 package tech.overturn.crowmail.models;
 
+import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
@@ -37,13 +38,13 @@ public class Account extends ModelBase {
         }
     }
 
-    public void setFetchLedger(SQLiteDatabase db, Long uidnext) {
+    public void setFetchLedger(SQLiteDatabase db, Context context, Long uidnext) {
         Ledger ledger = new Ledger();
         ledger.type = Ledger.LATEST_FETCH_TYPE;
         ledger.date = new Date();
         ledger.account_id = this.data._id;
         ledger.longval = uidnext;
-        Orm.insert(db, Ledger.tableName, ledger);
+        ledger.log(db, context);
     }
 
     public Ledger getFetchLedger(SQLiteDatabase db){
