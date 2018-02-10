@@ -129,6 +129,12 @@ public class Orm {
                             vals.put(fname, value.toString());
                         }
                     }
+                    else if(f.getType() == Long.class) {
+                        Long value = (Long) f.get(obj);
+                        if(value != null) {
+                            vals.put(fname, value.toString());
+                        }
+                    }
                     else if(f.getType() == Date.class) {
                         Long value = ((Date) f.get(obj)).getTime();
                         if(value != null) {

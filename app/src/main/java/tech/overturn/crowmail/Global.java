@@ -6,6 +6,9 @@ import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.util.Log;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Global {
     public static final String CROWMAIL = "crowmail";
     public static final String CROWMAIL_ERROR = "crowmail_error";

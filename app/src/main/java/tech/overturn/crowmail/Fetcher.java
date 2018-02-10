@@ -45,7 +45,7 @@ import javax.net.ssl.SSLSocketFactory;
 
 import tech.overturn.crowmail.models.Account;
 import tech.overturn.crowmail.models.CrowMessage;
-import tech.overturn.crowmail.models.Status;
+import tech.overturn.crowmail.models.Ledger;
 
 import static android.content.Context.NOTIFICATION_SERVICE;
 
@@ -64,14 +64,15 @@ public class Fetcher {
     String action = "fetch";
     public Integer failCount = 0;
     public Date latestFailure;
-    public Long MAX_ADJUSTED_FAIL = 15L;
-    public Long RELEASE_TIME = 1000 * 60 * 2L;
-    public Long TIMEOUT = 1000 * 15L;
-    //Long FETCH_DELAY = 1000 * 60 * 1L; Long FETCH_DELAY = 1000 * 15L;
+    public static Long MAX_ADJUSTED_FAIL = 15L;
+    public static Long RELEASE_TIME = 1000 * 60 * 2L;
+    public static Long TIMEOUT = 1000 * 15L;
+    //Long FETCH_DELAY = 1000 * 60 * 1L;
+    public static Long FETCH_DELAY = 1000 * 15L;
 
 
     public Fetcher(Context context, Account a) {
-        dbh = new DBHelper(context);
+        this.dbh = new DBHelper(context);
         this.a = a;
         this.context = context;
         this.props = getProperties();
@@ -124,7 +125,7 @@ public class Fetcher {
         });
     }
 
-    private void fetchMail() throws MessagingException {
+    private Long fetchMail() throws MessagingException {
         Long uidnext = getUidNext(folder, "Inbox");
         Log.d("fcrow", String.format("---- fetching next:%d", uidnext));
         Integer previous = (a.data.uidnext != null && a.data.uidnext != 0) ? a.data.uidnext : 1;
@@ -140,6 +141,7 @@ public class Fetcher {
         if(store != null && store.isConnected()) {
             store.close();
         }
+        return uidnext;
     }
 
     private void notifyUpdates(Message[] msgs) throws MessagingException {
@@ -164,9 +166,9 @@ public class Fetcher {
        return reqs;
     }
 
-    public loop(){
-        Status.fromStrings(context, dbh.getWritableDatabase(),
-                Status.INFO_TYPE,
+    public void loop(){
+        Ledger.fromStrings(context, dbh.getWritableDatabase(),
+                Ledger.INFO_TYPE,
                 a.data._id,
                 "fetch task created", 
                 "",
@@ -177,19 +179,21 @@ public class Fetcher {
             @Override
             public void run() {
                 while (!Thread.interrupted()) {
-                    if(!Global.hasNetwork){
-                        synchronized Global.onNetworkUpTrue.add(new Runnable() {
+                    if(!Global.networkUp){
+                        Global.onNetworkUpTrue.add(new Runnable() {
                             @Override
                             public void run() {
-                                new Fetcher(this.context, _account).loop();
+                                new Fetcher(context, _account).loop();
                             }
                         });
+                        break;
                     }
                     CrowmailException cme = null;
                     Date startDebug = new Date();
                     try {
                         connect();
-                        fetchMail();
+                        Long uidnext = fetchMail();
+                        a.setFetchLedger(dbh.getWritableDatabase(), uidnext);
                     } catch (Exception e) {
                         Throwable cause;
                         if ((cause = e.getCause()) != null
@@ -206,10 +210,16 @@ public class Fetcher {
                         } else {
                             cme = new CrowmailException(CrowmailException.UNKNOWN, "Unknown error", e, a);
                         }
-                        Status.fromCme(context, dbh.getWritableDatabase(), a.data._id, "fetch error", cme, true);
+                        Ledger.fromCme(context, dbh.getWritableDatabase(), "fetch error", cme, true);
                         throw cme;
                     }
-                    Thread.sleep(FETCH_DELAY);
+                    try {
+                        Thread.sleep(Fetcher.FETCH_DELAY);
+                    } catch (InterruptedException e) {
+                        cme = new CrowmailException(CrowmailException.UNKNOWN, "sleep_interrupted", e, a);
+                        Ledger.fromCme(context, dbh.getWritableDatabase(), "loop_initerrupted", cme, true);
+                        break;
+                    }
                 }
                     
             }
@@ -245,7 +255,7 @@ public class Fetcher {
         if(updateFailureStats()) {
             return this.getDelay();
         }
-        Status.fromCme(context, dbh.getWritableDatabase(), a.data._id, "too manny failures", e, true);
+        Ledger.fromCme(context, dbh.getWritableDatabase(), "too manny failures", e, true);
         return -1L;
     }
 }

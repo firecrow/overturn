@@ -11,7 +11,7 @@ import tech.overturn.crowmail.models.CrowMessage;
 import tech.overturn.crowmail.models.CrowMessageData;
 import tech.overturn.crowmail.models.Email;
 import tech.overturn.crowmail.models.EmailToMsg;
-import tech.overturn.crowmail.models.Status;
+import tech.overturn.crowmail.models.Ledger;
 
 public class DBHelper extends SQLiteOpenHelper {
     public static final int DB_VERSION = 7;
@@ -30,7 +30,7 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     public void onUpgrade(SQLiteDatabase db, int old, int version) {
-        db.execSQL(Orm.getCreateTable(Status.tableName, Status.class));
+        db.execSQL(Orm.getCreateTable(Ledger.tableName, Ledger.class));
     }
 
     public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {

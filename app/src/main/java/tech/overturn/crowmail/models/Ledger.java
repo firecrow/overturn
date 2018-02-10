@@ -20,7 +20,7 @@ import tech.overturn.crowmail.Data;
 import tech.overturn.crowmail.Orm;
 
 
-public class Status extends Data {
+public class Ledger extends Data {
     public static String tableName  = "status";
     public Integer _id;
     public Integer account_id;
@@ -36,15 +36,15 @@ public class Status extends Data {
 
     public void log(SQLiteDatabase db) {
         Log.d("fcrow", toString());
-        Orm.insert(db, Status.tableName, this);
+        Orm.insert(db, Ledger.tableName, this);
     }
 
     public String toString() {
-        return String.format("<Status %s -> %s/%d>", type, textval, longval);
+        return String.format("<Ledger %s -> %s/%d>", type, textval, longval);
     }
 
     public static void fromCme(Context context, SQLiteDatabase db, String label, CrowmailException cme, boolean notify) {
-        Status s = new Status();
+        Ledger s = new Ledger();
         s.textval = label+':'+cme.getClass().getName();
         Throwable cause = cme;
         while(cause.getCause() != null) {
@@ -61,7 +61,7 @@ public class Status extends Data {
     }
 
     public static void fromStrings(Context context, SQLiteDatabase db, String type, Integer account_id, String label, String description, boolean notify) {
-        Status s = new Status();
+        Ledger s = new Ledger();
         s.type = type;
         s.textval = label;
         s.description = description;

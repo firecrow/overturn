@@ -24,13 +24,12 @@ import java.util.Map;
 
 import tech.overturn.crowmail.models.Account;
 import tech.overturn.crowmail.models.CrowMessage;
-import tech.overturn.crowmail.models.Status;
+import tech.overturn.crowmail.models.Ledger;
 
 public class Queue extends Service {
 
     DBHelper dbh;
     Map<Integer, Account> recieving;
-    QueueHandler handler;
 
     @Override
     public void onCreate() {
@@ -38,19 +37,13 @@ public class Queue extends Service {
         recieving = new HashMap<Integer, Account>();
         Log.d("fcrow", "---------- service created");
 
-        Status.fromStrings(getApplicationContext(),
+        Ledger.fromStrings(getApplicationContext(),
                 dbh.getWritableDatabase(),
-                Status.INFO_TYPE,
+                Ledger.INFO_TYPE,
                 null, 
                 "service created",
                 "", 
                 true);
-
-        HandlerThread handlerThread = new HandlerThread("CrowQueueThread");
-        handlerThread.start();
-        Looper looper = handlerThread.getLooper();
-        // Create a handler attached to the background message processing thread
-        this.handler = new QueueHandler(getApplicationContext(), dbh.getWritableDatabase(), looper);
 
         NetworkListen.listen(getApplicationContext());
     }
@@ -79,16 +72,11 @@ public class Queue extends Service {
             Log.d("fcrow", String.format("--------------- ACTION: %s", intent.getAction()));
             if (intent.getAction().equals(Global.TRIGGER_SEND)) {
                 // Mailer m = new Mailer(a);
-                // this.handler.enqueue(Mailer.getQueuedItem(a, msg));
             } else if (intent.getAction().equals(Global.TRIGGER_FETCH)) {
                 if(recieving.get(account_id.intValue()) != null) {
                     Log.d("fcrow", String.format("--------------- already recieving"));
                 } else {
-                    try {
-                        new Fetcher(getApplicationContext(), a)new Fetcher(getApplicationContext(), a).loop();
-                    } catch (InterruptedException e) {
-                        Log.d("fcrow", String.format("--------------- error with item enqueue"));
-                    }
+                    new Fetcher(getApplicationContext(), a).loop();
                 }
             }
         };
@@ -100,9 +88,9 @@ public class Queue extends Service {
     public void onDestroy() {
         super.onDestroy();
         Log.d("fcrow", "---------- service destroyed");
-        Status.fromStrings(getApplicationContext(),
+        Ledger.fromStrings(getApplicationContext(),
                 dbh.getWritableDatabase(),
-                Status.INFO_TYPE,
+                Ledger.INFO_TYPE,
                 null,
                 "service destroyed",
                 "",
