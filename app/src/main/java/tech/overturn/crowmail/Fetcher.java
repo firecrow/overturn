@@ -125,12 +125,19 @@ public class Fetcher {
         });
     }
 
-    private Long fetchMail() throws MessagingException {
+    private void fetchMail() throws MessagingException {
         Long uidnext = getUidNext(folder, "Inbox");
         Log.d("fcrow", String.format("---- uid next %d", uidnext));
         Integer previous = (a.data.uidnext != null && a.data.uidnext != 0) ? a.data.uidnext : 1;
         if (previous != uidnext.intValue()) {
             Log.d("fcrow", String.format("---- fetching %d..%d", previous, uidnext));
+            Ledger.fromStrings(context, dbh.getWritableDatabase(),
+                    Ledger.MESSAGE_COUNT_TYPE,
+                    a.data._id,
+                    String.format("messages %d..%d", previous, uidnext),
+                    "",
+                    false
+            );
             Message[] msgs = folder.getMessagesByUID(previous, uidnext - 1);
             notifyUpdates(msgs);
             a.data.uidnext = uidnext.intValue();
@@ -142,7 +149,7 @@ public class Fetcher {
         if(store != null && store.isConnected()) {
             store.close();
         }
-        return uidnext;
+        a.setFetchLedger(dbh.getWritableDatabase(), context, uidnext);
     }
 
     private void notifyUpdates(Message[] msgs) throws MessagingException {
@@ -194,8 +201,7 @@ public class Fetcher {
                     Date startDebug = new Date();
                     try {
                         connect();
-                        Long uidnext = fetchMail();
-                        a.setFetchLedger(dbh.getWritableDatabase(), context, uidnext);
+                        fetchMail();
                     } catch (Exception e) {
                         Throwable cause;
                         if ((cause = e.getCause()) != null

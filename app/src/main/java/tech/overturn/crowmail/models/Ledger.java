@@ -35,7 +35,10 @@ public class Ledger extends Data {
     public static String NETWORK_STATUS_TYPE = "network_status";
     public static String INFO_TYPE = "info";
     public static String LATEST_FETCH_TYPE = "latest_fetch";
+    public static String MESSAGE_COUNT_TYPE = "message_count";
+
     public static String LEDGER_UPDATED = "tech.overturn.crowmail.LEDGER_UPDATED";
+
 
     public void log(SQLiteDatabase db, Context context) {
         Log.d("fcrow", toString());
