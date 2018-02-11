@@ -174,20 +174,21 @@ public class Fetcher {
                 "fetch task created", 
                 "",
                 false
-        ); 
+        );
+        final Fetcher self = this;
         final Runnable runnable = new Runnable() {
             final Account _account = a;
             @Override
             public void run() {
-                while (!Thread.interrupted()) {
+                while (true) {
                     if(!Global.networkUp){
                         Global.onNetworkUpTrue.add(new Runnable() {
                             @Override
                             public void run() {
-                                new Fetcher(context, _account).loop();
+                                self.loop();
                             }
                         });
-                        break;
+                        return;
                     }
                     CrowmailException cme = null;
                     Date startDebug = new Date();
@@ -211,17 +212,26 @@ public class Fetcher {
                         } else {
                             cme = new CrowmailException(CrowmailException.UNKNOWN, "Unknown error", e, a);
                         }
-                        Ledger.fromCme(context, dbh.getWritableDatabase(), "fetch error", cme, true);
+                        Ledger.fromCme(context, dbh.getWritableDatabase(), "fetch error", cme, false);
                     }
                     try {
                         Thread.sleep(Fetcher.FETCH_DELAY);
                     } catch (InterruptedException e) {
                         cme = new CrowmailException(CrowmailException.UNKNOWN, "sleep_interrupted", e, a);
-                        Ledger.fromCme(context, dbh.getWritableDatabase(), "loop_initerrupted", cme, true);
+                        Ledger.fromCme(context, dbh.getWritableDatabase(), "loop_initerrupted", cme, false);
                         break;
                     }
                 }
-                    
+                Ledger.fromStrings(context, dbh.getWritableDatabase(),
+                        Ledger.ERROR_TYPE,
+                        _account.data._id,
+                        "loop_end",
+                        null,
+                        false);
+                try {
+                    Thread.sleep(Fetcher.FETCH_DELAY);
+                } catch(InterruptedException e) {}
+                self.loop();
             }
         };
         new Thread(runnable).start();

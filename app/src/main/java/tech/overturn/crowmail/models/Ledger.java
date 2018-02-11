@@ -32,6 +32,7 @@ public class Ledger extends Data {
     public String textval;
 
     public static String ERROR_TYPE = "error";
+    public static String NETWORK_STATUS_TYPE = "network_status";
     public static String INFO_TYPE = "info";
     public static String LATEST_FETCH_TYPE = "latest_fetch";
     public static String LEDGER_UPDATED = "tech.overturn.crowmail.LEDGER_UPDATED";

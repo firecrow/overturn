@@ -197,7 +197,8 @@ public class Orm {
             Class<? extends Data> cls,
             String where,
             String[] args,
-            String order
+            String order,
+            Integer limit
     ) {
         String[] cols = getSelectColumns(cls);
         List<Data> objs = new ArrayList<Data>();
@@ -208,7 +209,8 @@ public class Orm {
                 args,
                 null,
                 null,
-                order
+                order,
+                limit != null ? limit.toString() : null
         );
         while(cursor.moveToNext()) {
             objs.add(objFromCursor(cursor, cols, cls));

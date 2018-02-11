@@ -62,12 +62,21 @@ public class LedgerActivity extends AppCompatActivity {
     }
 
     private void refresh() {
+        /*
         List<Ledger> ldata = (List<Ledger>) Orm.byQuery(dbh.getReadableDatabase(),
                 Ledger.tableName,
                 Ledger.class,
                 "account_id = ?",
                 new String[] {account_id.toString()},
                 "date desc");
+                */
+        List<Ledger> ldata = (List<Ledger>) Orm.byQuery(dbh.getReadableDatabase(),
+                Ledger.tableName,
+                Ledger.class,
+                null,
+                null,
+                "date desc",
+                100);
         Log.d("fcrow", String.format("in resume: %d %d", account_id, ldata.size()));
 
         LedgerAdapter adapter = (LedgerAdapter)lview.getAdapter();

@@ -2,12 +2,15 @@ package tech.overturn.crowmail;
 
 import android.content.Context;
 import android.content.Intent;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import tech.overturn.crowmail.models.Ledger;
 
 public class Global {
     public static final String CROWMAIL = "crowmail";
@@ -22,14 +25,20 @@ public class Global {
     public static final String NETWORK_STATUS = "tech.overturn.crowmail.NETWORK_STATUS";
 
     public static boolean networkUp = false;
+    public static DBHelper dbh;
 
     public static List<Runnable> onNetworkUpTrue = new ArrayList<Runnable>();
 
     public static void setNetworkUp(Context context, boolean up) {
-        Log.d("fcrow", String.format("---- network has changed:%b", up));
         if (networkUp == up) {
             return;
         }
+        Ledger.fromStrings(context, getDBH(context).getWritableDatabase(),
+                Ledger.NETWORK_STATUS_TYPE,
+                null,
+                String.format("network is up:%b", up),
+                null,
+                false);
         if (up) {
             for(Runnable runner: onNetworkUpTrue) {
                 runner.run();
@@ -37,5 +46,12 @@ public class Global {
             onNetworkUpTrue = new ArrayList<Runnable>();
         }
         networkUp = up;
+    }
+
+    public static DBHelper getDBH(Context context) {
+        if(dbh == null) {
+            dbh = new DBHelper(context);
+        }
+        return dbh;
     }
 }
