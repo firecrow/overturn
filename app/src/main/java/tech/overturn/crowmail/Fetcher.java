@@ -130,18 +130,19 @@ public class Fetcher {
         Log.d("fcrow", String.format("---- uid next %d", uidnext));
         Integer previous = (a.data.uidnext != null && a.data.uidnext != 0) ? a.data.uidnext : 1;
         if (previous != uidnext.intValue()) {
-            Log.d("fcrow", String.format("---- fetching %d..%d", previous, uidnext));
-            Ledger.fromStrings(context, dbh.getWritableDatabase(),
-                    Ledger.MESSAGE_COUNT_TYPE,
-                    a.data._id,
-                    String.format("messages %d..%d", previous, uidnext),
-                    "",
-                    false
-            );
             Message[] msgs = folder.getMessagesByUID(previous, uidnext - 1);
             notifyUpdates(msgs);
             a.data.uidnext = uidnext.intValue();
             a.save(dbh.getWritableDatabase());
+            Log.d("fcrow", String.format("---- fetching %d..%d", previous, uidnext));
+            new Ledger(
+                    a.data._id,
+                    new Date(),
+                    Ledger.MESSAGE_COUNT_TYPE,
+                    String.format("messages %d..%d", previous, uidnext),
+                    Long.valueOf(msgs.length),
+                    null
+            ).log(dbh.getWritableDatabase(), context);
         }
         if(folder != null && folder.isOpen()) {
             folder.close(false);

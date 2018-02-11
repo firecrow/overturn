@@ -39,6 +39,16 @@ public class Ledger extends Data {
 
     public static String LEDGER_UPDATED = "tech.overturn.crowmail.LEDGER_UPDATED";
 
+    public Ledger() {}
+
+    public Ledger(Integer account_id, Date date, String type, String textval, Long longval, String description) {
+        this.account_id = account_id;
+        this.date = date;
+        this.type = type;
+        this.textval = textval;
+        this.longval = longval;
+        this.description = description;
+    }
 
     public void log(SQLiteDatabase db, Context context) {
         Log.d("fcrow", toString());
