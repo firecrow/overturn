@@ -41,13 +41,29 @@ public class NetworkListen {
                     name = "DEFAULT";
                 }
                 interfacesUp.put(name, true);
-                NetworkListen.calcUp(context, name);
+                new Ledger(
+                        null,
+                        new Date(),
+                        Ledger.NETWORK_STATUS_TYPE,
+                        " +" + (name != null ? name : "null") + " -> " +interfacesUp.keySet().toString(),
+                        null,
+                        null
+                ).log(Global.getDBH(context).getWritableDatabase(), context);
+                NetworkListen.calcUp(context);
             }
 
             @Override
             public void onUnavailable() {
                 interfacesUp.clear();
-                NetworkListen.calcUp(context, null);
+                new Ledger(
+                        null,
+                        new Date(),
+                        Ledger.NETWORK_STATUS_TYPE,
+                        "unavailable",
+                        null,
+                        null
+                ).log(Global.getDBH(context).getWritableDatabase(), context);
+                NetworkListen.calcUp(context);
             }
 
             @Override
@@ -60,23 +76,23 @@ public class NetworkListen {
                     name = "DEFAULT";
                 }
                 interfacesUp.remove(name);
-                NetworkListen.calcUp(context, name);
+                new Ledger(
+                        null,
+                        new Date(),
+                        Ledger.NETWORK_STATUS_TYPE,
+                        " -" + (name != null ? name : "null") + " -> " +interfacesUp.keySet().toString(),
+                        null,
+                        null
+                ).log(Global.getDBH(context).getWritableDatabase(), context);
+                NetworkListen.calcUp(context);
             }
         };
 
         cm.registerNetworkCallback(new NetworkRequest.Builder().build(), callback);
     }
 
-    public static void calcUp(Context context, String name) {
+    public static void calcUp(Context context) {
         Boolean up = interfacesUp.size() > 0;
-        new Ledger(
-                null,
-                new Date(),
-                Ledger.NETWORK_STATUS_TYPE,
-                (name != null ? name : "null") + " -> " +interfacesUp.keySet().toString(),
-                null,
-                null
-        ).log(Global.getDBH(context).getWritableDatabase(), context);
         Global.setNetworkUp(context, up);
     }
 }
