@@ -10,8 +10,11 @@ import android.net.NetworkInfo;
 import android.net.NetworkRequest;
 import android.util.Log;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+
+import tech.overturn.crowmail.models.Ledger;
 
 public class NetworkListen {
     public static boolean initialized = false;
@@ -30,42 +33,50 @@ public class NetworkListen {
 
             @Override
             public void onAvailable(Network network) {
+                String name;
                 NetworkInfo info = cm.getNetworkInfo(network);
                 if (info != null) {
-                    String name = info.getTypeName();
-                    interfacesUp.put(name, true);
-                    Log.d("fcrow", String.format("network up %s", name));
-                    NetworkListen.calcUp(context);
+                    name = info.getTypeName();
                 } else {
-                    Log.d("fcrow", String.format("network up null"));
+                    name = "DEFAULT";
                 }
+                interfacesUp.put(name, true);
+                NetworkListen.calcUp(context, name);
             }
 
             @Override
             public void onUnavailable() {
-                Log.d("fcrow", String.format("network unavailable"));
-                NetworkListen.calcUp(context);
+                interfacesUp.clear();
+                NetworkListen.calcUp(context, null);
             }
 
             @Override
             public void onLost(Network network) {
+                String name;
                 NetworkInfo info = cm.getNetworkInfo(network);
                 if (info != null) {
-                    String name = info.getTypeName();
-                    interfacesUp.remove(name);
-                    Log.d("fcrow", String.format("network lost %s", name));
-                    NetworkListen.calcUp(context);
+                    name = info.getTypeName();
                 } else {
-                    Log.d("fcrow", String.format("network lost null"));
+                    name = "DEFAULT";
                 }
+                interfacesUp.remove(name);
+                NetworkListen.calcUp(context, name);
             }
         };
 
         cm.registerNetworkCallback(new NetworkRequest.Builder().build(), callback);
     }
 
-    public static void calcUp(Context context) {
+    public static void calcUp(Context context, String name) {
         Boolean up = interfacesUp.size() > 0;
+        new Ledger(
+                null,
+                new Date(),
+                Ledger.NETWORK_STATUS_TYPE,
+                (name != null ? name : "null") + " -> " +interfacesUp.keySet().toString(),
+                null,
+                null
+        ).log(Global.getDBH(context).getWritableDatabase(), context);
         Global.setNetworkUp(context, up);
     }
 }
