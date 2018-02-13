@@ -45,7 +45,7 @@ public class NetworkListen {
                         null,
                         new Date(),
                         Ledger.NETWORK_STATUS_TYPE,
-                        " +" + (name != null ? name : "null") + " -> " +interfacesUp.keySet().toString(),
+                        " +" + name + " -> " +interfacesUp.keySet().toString(),
                         null,
                         null
                 ).log(Global.getDBH(context).getWritableDatabase(), context);
@@ -67,6 +67,59 @@ public class NetworkListen {
             }
 
             @Override
+            public void onCapabilitiesChanged(Network network, NetworkCapabilities capabilities) {
+                String name;
+                NetworkInfo info = cm.getNetworkInfo(network);
+                if (info != null) {
+                    name = info.getTypeName();
+                } else {
+                    name = "DEFAULT";
+                }
+
+                String caps = "";
+                if(capabilities.hasCapability(NetworkCapabilities.TRANSPORT_CELLULAR)) {
+                    caps += "M";
+                }
+                if(capabilities.hasCapability(NetworkCapabilities.TRANSPORT_WIFI)) {
+                    caps += "W";
+                }
+                if(capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)) {
+                    caps += "I";
+                }
+
+                new Ledger(
+                        null,
+                        new Date(),
+                        Ledger.NETWORK_STATUS_TYPE,
+                        " ^"+caps + name + " -> " +interfacesUp.keySet().toString(),
+                        Long.valueOf(max),
+                        null
+                ).log(Global.getDBH(context).getWritableDatabase(), context);
+                NetworkListen.calcUp(context);
+            }
+
+
+            @Override
+            public void onLosing(Network network, int max) {
+                String name;
+                NetworkInfo info = cm.getNetworkInfo(network);
+                if (info != null) {
+                    name = info.getTypeName();
+                } else {
+                    name = "DEFAULT";
+                }
+                new Ledger(
+                        null,
+                        new Date(),
+                        Ledger.NETWORK_STATUS_TYPE,
+                        " ..." + name + " -> " +interfacesUp.keySet().toString(),
+                        Long.valueOf(max),
+                        null
+                ).log(Global.getDBH(context).getWritableDatabase(), context);
+                NetworkListen.calcUp(context);
+            }
+
+            @Override
             public void onLost(Network network) {
                 String name;
                 NetworkInfo info = cm.getNetworkInfo(network);
@@ -80,15 +133,19 @@ public class NetworkListen {
                         null,
                         new Date(),
                         Ledger.NETWORK_STATUS_TYPE,
-                        " -" + (name != null ? name : "null") + " -> " +interfacesUp.keySet().toString(),
+                        " -" + name + " -> " +interfacesUp.keySet().toString(),
                         null,
                         null
                 ).log(Global.getDBH(context).getWritableDatabase(), context);
                 NetworkListen.calcUp(context);
             }
         };
-
-        cm.registerNetworkCallback(new NetworkRequest.Builder().build(), callback);
+        NetworkRequest req = new NetworkRequest.Builder()
+                .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .build()
+        cm.registerNetworkCallback(req, callback);
     }
 
     public static void calcUp(Context context) {
