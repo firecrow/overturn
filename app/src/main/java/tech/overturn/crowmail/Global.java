@@ -33,7 +33,7 @@ public class Global {
         if (networkUp == up) {
             return;
         }
-        Ledger.fromStrings(context, getDBH(context).getWritableDatabase(),
+        Ledger.fromStrings(context, getWriteDb(context),
                 Ledger.NETWORK_STATUS_TYPE,
                 null,
                 String.format("network is up:%b", up),
@@ -48,10 +48,18 @@ public class Global {
         networkUp = up;
     }
 
-    public static DBHelper getDBH(Context context) {
+    private static DBHelper getDbh(Context context) {
         if(dbh == null) {
             dbh = new DBHelper(context);
         }
         return dbh;
+    }
+
+    public static SQLiteDatabase getWriteDb(Context context) {
+        return getDbh(context).getWritableDatabase();
+    }
+
+    public static SQLiteDatabase getReadDb(Context context) {
+        return getDbh(context).getReadableDatabase();
     }
 }

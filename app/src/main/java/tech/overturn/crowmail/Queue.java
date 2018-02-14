@@ -4,6 +4,7 @@ import android.app.IntentService;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.ConnectivityManager.NetworkCallback;
 import android.net.Network;
@@ -30,6 +31,7 @@ public class Queue extends Service {
 
     DBHelper dbh;
     Map<Integer, Account> recieving;
+    NetworkListen recv;
 
     @Override
     public void onCreate() {
@@ -45,7 +47,8 @@ public class Queue extends Service {
                 "", 
                 true);
 
-        NetworkListen.listen(getApplicationContext());
+        recv = new NetworkListen();
+        registerReceiver(recv, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
     }
 
     @Override
@@ -95,6 +98,7 @@ public class Queue extends Service {
                 "service destroyed",
                 "",
                 true);
+        unregisterReceiver(recv);
         stopSelf();
     }
 
