@@ -96,7 +96,7 @@ public class CrowMessage extends ModelBase {
     }
 
     public void saveAddress(String type, InternetAddress addr) {
-        Integer email_id = genEmailId(addr);
+        Long email_id = genEmailId(addr);
         EmailToMsg m2m = new EmailToMsg();
         m2m.email_id = email_id;
         m2m.message_id = this.data._id;
@@ -104,11 +104,11 @@ public class CrowMessage extends ModelBase {
         Orm.insert(db, EmailToMsg.tableName, m2m);
     }
 
-    public Integer genEmailId(InternetAddress address) {
+    public Long genEmailId(InternetAddress address) {
         String sql = "select _id from email where email = ?";
         String args[] = new String[]{address.getAddress()};
         List<? extends Data> results = Orm.byQueryRaw(db, Email.class, new String[]{"_id"}, sql, args);
-        Integer email_id;
+        Long email_id;
         if(results.size() > 0) {
             email_id = ((Email)results.get(0))._id;
         } else {

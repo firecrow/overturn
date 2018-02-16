@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.util.Log;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,15 +21,15 @@ public class Queue extends Service {
     @Override
     public void onCreate() {
         recieving = new HashMap<Integer, Account>();
-        Log.d("fcrow", "---------- service created");
 
-        Ledger.fromStrings(getApplicationContext(),
-                Global.getWriteDb(getApplicationContext()),
+        new Ledger(
+                null,
+                new Date(),
                 Ledger.INFO_TYPE,
-                null, 
                 "service created",
-                "", 
-                true);
+                null,
+                null)
+        .log(Global.getWriteDb(getApplicationContext()), getApplicationContext());
     }
 
     @Override
@@ -71,13 +72,14 @@ public class Queue extends Service {
     public void onDestroy() {
         super.onDestroy();
         Log.d("fcrow", "---------- service destroyed");
-        Ledger.fromStrings(getApplicationContext(),
-                Global.getWriteDb(getApplicationContext()),
-                Ledger.INFO_TYPE,
+        new Ledger(
                 null,
+                new Date(),
+                Ledger.INFO_TYPE,
                 "service destroyed",
-                "",
-                true);
+                null,
+                null)
+        .log(Global.getWriteDb(getApplicationContext()), getApplicationContext());
         stopSelf();
     }
 

@@ -148,13 +148,14 @@ public class Fetcher {
     }
 
     public void loop(){
-        Ledger.fromStrings(context, Global.getWriteDb(context),
-                Ledger.INFO_TYPE,
+        new Ledger(
                 a.data._id,
-                "fetch task created", 
-                "",
-                false
-        );
+                new Date(),
+                Ledger.INFO_TYPE,
+                "fetch task created",
+                null,
+                null
+        ).log(Global.getWriteDb(context), context);
         final Fetcher self = this;
         final Runnable runnable = new Runnable() {
             final Account _account = a;
@@ -190,8 +191,14 @@ public class Fetcher {
                     try {
                         Thread.sleep(delay);
                     } catch (InterruptedException e) {
-                        cme = new CrowmailException(CrowmailException.UNKNOWN, "sleep_interrupted", e, a);
-                        Ledger.fromCme(context, Global.getWriteDb(context), "loop_initerrupted", cme, false);
+                        new Ledger(
+                                _account.data._id,
+                                new Date(),
+                                Ledger.SLEEP_THREAD_INTERRUPTED,
+                                null,
+                                new Date().getTime() - startDebug.getTime(),
+                                Global.stackToString(e)
+                        ).log(Global.getWriteDb(context), context);
                         break;
                     }
                 }

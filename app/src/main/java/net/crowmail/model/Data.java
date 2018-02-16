@@ -1,6 +1,5 @@
 package net.crowmail.model;
 
-public abstract class Data {
-    public abstract Integer getId();
-    public abstract void setId(Integer id);
+public class Data {
+    public Long _id;
 }

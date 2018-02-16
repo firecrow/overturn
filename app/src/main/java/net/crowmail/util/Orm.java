@@ -112,7 +112,7 @@ public class Orm {
             }
         }
         if (vals.size() > 0) {
-            String where = String.format("_id=%d", obj.getId());
+            String where = String.format("_id=%d", obj._id);
             int res = db.update(table, vals, where, null);
             Log.d("fcrow", String.format("--- update res:%d '%s'", res, where));
         }
@@ -157,7 +157,7 @@ public class Orm {
             }
         }
         if (vals.size() > 0) {
-            obj.setId(toIntExact(db.insertOrThrow(table, null, vals)));
+            obj._id = db.insertOrThrow(table, null, vals);
         }
     }
 
