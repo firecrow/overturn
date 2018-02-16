@@ -163,14 +163,15 @@ public class Orm {
 
     public static String[] getSelectColumns(Class<? extends Data> cls) {
         Field[] fields =  cls.getFields();
-        String[] cols = new String[fields.length+1];
+        List<String> cols = new ArrayList<String>();
+        cols.add("_id");
         for(int i = 0; i < fields.length; i++) {
             if (Modifier.isStatic(fields[i].getModifiers()) || fields[i].getName().equals("serialVersionUID")) {
                 continue;
             }
-            cols[i] = fields[i].getName();
+            cols.add(fields[i].getName());
         }
-        return cols;
+        return cols.toArray(new String[cols.size()]);
     }
 
     public static Data byId(SQLiteDatabase db, String table, Class<? extends Data> cls, Integer id) {
