@@ -168,13 +168,6 @@ public class Fetcher {
         }
     }
 
-    public List<QItemReq> getReqs()
-    {
-       List<QItemReq> reqs = new ArrayList<QItemReq>();
-       reqs.add(new QItemReqNetworkUp());
-       return reqs;
-    }
-
     public void loop(){
         Ledger.fromStrings(context, dbh.getWritableDatabase(),
                 Ledger.INFO_TYPE,
@@ -189,40 +182,31 @@ public class Fetcher {
             @Override
             public void run() {
                 while (true) {
-                    if(!Global.networkUp){
-                        Global.onNetworkUpTrue.add(new Runnable() {
-                            @Override
-                            public void run() {
-                                self.loop();
-                            }
-                        });
-                        return;
-                    }
+                    Long delay = Fetcher.FETCH_DELAY;
                     CrowmailException cme = null;
                     Date startDebug = new Date();
-                    try {
-                        connect();
-                        fetchMail();
-                    } catch (Exception e) {
-                        Throwable cause;
-                        if ((cause = e.getCause()) != null
-                                && cause instanceof ConnectionException
-                                || cause instanceof SocketTimeoutException
-                                || cause instanceof ConnectException
-                                || cause instanceof SSLHandshakeException
-                                || cause instanceof SocketException){
-                            cme = new CrowmailException(CrowmailException.TIMEOUT, String.format("Connection error in fetch in:%d", startDebug.getTime()), e, a);
-                        } else if (e instanceof MessagingException
-                                    || e instanceof ProtocolException
-                                    || e instanceof FolderClosedException) {
-                            cme = new CrowmailException(CrowmailException.ERROR, "Server error in fetch.", e, a);
-                        } else {
+                    if (!Global.hasRoute(_account.data.imapHost)) {
+                        delay *= 3;
+                        new Ledger(
+                                _account.data._id,
+                                new Date(),
+                                Ledger.NETWORK_UNREACHABLE,
+                                String.format("network down for %s", _account.data.imapHost),
+                                null,
+                                null
+                        ).log(Global.getWriteDb(context), context);
+                    } else {
+                        try {
+                            connect();
+                            fetchMail();
+                        } catch (Exception e) {
                             cme = new CrowmailException(CrowmailException.UNKNOWN, "Unknown error", e, a);
+                            Ledger.fromCme(context, dbh.getWritableDatabase(), "fetch error", cme, false);
+                            delay *= 3;
                         }
-                        Ledger.fromCme(context, dbh.getWritableDatabase(), "fetch error", cme, false);
                     }
                     try {
-                        Thread.sleep(Fetcher.FETCH_DELAY);
+                        Thread.sleep(delay);
                     } catch (InterruptedException e) {
                         cme = new CrowmailException(CrowmailException.UNKNOWN, "sleep_interrupted", e, a);
                         Ledger.fromCme(context, dbh.getWritableDatabase(), "loop_initerrupted", cme, false);

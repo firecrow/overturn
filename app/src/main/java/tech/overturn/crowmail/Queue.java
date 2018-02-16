@@ -31,7 +31,6 @@ public class Queue extends Service {
 
     DBHelper dbh;
     Map<Integer, Account> recieving;
-    NetworkListen recv;
 
     @Override
     public void onCreate() {
@@ -46,9 +45,6 @@ public class Queue extends Service {
                 "service created",
                 "", 
                 true);
-
-        recv = new NetworkListen();
-        registerReceiver(recv, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
     }
 
     @Override
@@ -98,7 +94,6 @@ public class Queue extends Service {
                 "service destroyed",
                 "",
                 true);
-        unregisterReceiver(recv);
         stopSelf();
     }
 

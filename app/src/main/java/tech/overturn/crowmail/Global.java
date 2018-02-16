@@ -7,6 +7,7 @@ import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.util.Log;
 
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,29 +25,7 @@ public class Global {
     public static final String START_SERVICE = "tech.overturn.crowmail.START_SERVICE";
     public static final String NETWORK_STATUS = "tech.overturn.crowmail.NETWORK_STATUS";
 
-    public static boolean networkUp = false;
     public static DBHelper dbh;
-
-    public static List<Runnable> onNetworkUpTrue = new ArrayList<Runnable>();
-
-    public static void setNetworkUp(Context context, boolean up) {
-        if (networkUp == up) {
-            return;
-        }
-        Ledger.fromStrings(context, getWriteDb(context),
-                Ledger.NETWORK_STATUS_TYPE,
-                null,
-                String.format("network is up:%b", up),
-                null,
-                false);
-        if (up) {
-            for(Runnable runner: onNetworkUpTrue) {
-                runner.run();
-            }
-            onNetworkUpTrue = new ArrayList<Runnable>();
-        }
-        networkUp = up;
-    }
 
     private static DBHelper getDbh(Context context) {
         if(dbh == null) {
@@ -61,5 +40,14 @@ public class Global {
 
     public static SQLiteDatabase getReadDb(Context context) {
         return getDbh(context).getReadableDatabase();
+    }
+
+    public static boolean hasRoute(String host) {
+        try {
+            InetAddress ip = InetAddress.getByName(host);
+            return !ip.equals("");
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

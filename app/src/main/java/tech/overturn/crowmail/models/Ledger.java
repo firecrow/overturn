@@ -33,6 +33,7 @@ public class Ledger extends Data {
 
     public static String ERROR_TYPE = "error";
     public static String NETWORK_STATUS_TYPE = "network_status";
+    public static String NETWORK_UNREACHABLE = "network_unreachable";
     public static String INFO_TYPE = "info";
     public static String LATEST_FETCH_TYPE = "latest_fetch";
     public static String MESSAGE_COUNT_TYPE = "message_count";
