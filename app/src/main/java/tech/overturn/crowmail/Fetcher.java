@@ -66,7 +66,7 @@ public class Fetcher {
     public Date latestFailure;
     public static Long MAX_ADJUSTED_FAIL = 15L;
     public static Long RELEASE_TIME = 1000 * 60 * 2L;
-    public static Long TIMEOUT = 1000 * 15L;
+    public static Long TIMEOUT = 1000 * 5L;
     //Long FETCH_DELAY = 1000 * 60 * 1L;
     public static Long FETCH_DELAY = 1000 * 15L;
 
@@ -125,9 +125,8 @@ public class Fetcher {
         });
     }
 
-    private void fetchMail() throws MessagingException {
+    private Long fetchMail() throws MessagingException {
         Long uidnext = getUidNext(folder, "Inbox");
-        Log.d("fcrow", String.format("---- uid next %d", uidnext));
         Integer previous = (a.data.uidnext != null && a.data.uidnext != 0) ? a.data.uidnext : 1;
         if (previous != uidnext.intValue()) {
             Message[] msgs = folder.getMessagesByUID(previous, uidnext - 1);
@@ -150,7 +149,7 @@ public class Fetcher {
         if(store != null && store.isConnected()) {
             store.close();
         }
-        a.setFetchLedger(dbh.getWritableDatabase(), context, uidnext);
+        return uidnext;
     }
 
     private void notifyUpdates(Message[] msgs) throws MessagingException {
@@ -185,25 +184,28 @@ public class Fetcher {
                     Long delay = Fetcher.FETCH_DELAY;
                     CrowmailException cme = null;
                     Date startDebug = new Date();
-                    if (!Global.hasRoute(_account.data.imapHost)) {
+                    Long uidnext;
+                    try {
+                        connect();
+                        uidnext = fetchMail();
+                        new Ledger(
+                                _account.data._id,
+                                new Date(),
+                                Ledger.LATEST_FETCH_TYPE,
+                                String.format("duration %d",new Date().getTime() - startDebug.getTime()),
+                                uidnext,
+                                null
+                        ).log(Global.getWriteDb(context), context);
+                    } catch (Exception e) {
                         delay *= 3;
                         new Ledger(
                                 _account.data._id,
                                 new Date(),
                                 Ledger.NETWORK_UNREACHABLE,
-                                String.format("network down for %s", _account.data.imapHost),
-                                null,
-                                null
+                                _account.data.imapHost,
+                                new Date().getTime() - startDebug.getTime(),
+                                Global.stackToString(e)
                         ).log(Global.getWriteDb(context), context);
-                    } else {
-                        try {
-                            connect();
-                            fetchMail();
-                        } catch (Exception e) {
-                            cme = new CrowmailException(CrowmailException.UNKNOWN, "Unknown error", e, a);
-                            Ledger.fromCme(context, dbh.getWritableDatabase(), "fetch error", cme, false);
-                            delay *= 3;
-                        }
                     }
                     try {
                         Thread.sleep(delay);
@@ -213,16 +215,6 @@ public class Fetcher {
                         break;
                     }
                 }
-                Ledger.fromStrings(context, dbh.getWritableDatabase(),
-                        Ledger.ERROR_TYPE,
-                        _account.data._id,
-                        "loop_end",
-                        null,
-                        false);
-                try {
-                    Thread.sleep(Fetcher.FETCH_DELAY);
-                } catch(InterruptedException e) {}
-                self.loop();
             }
         };
         new Thread(runnable).start();

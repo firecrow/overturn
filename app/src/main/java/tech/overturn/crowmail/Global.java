@@ -7,6 +7,8 @@ import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.util.Log;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,12 +44,9 @@ public class Global {
         return getDbh(context).getReadableDatabase();
     }
 
-    public static boolean hasRoute(String host) {
-        try {
-            InetAddress ip = InetAddress.getByName(host);
-            return !ip.equals("");
-        } catch (Exception e) {
-            return false;
-        }
+    public static String stackToString(Exception e) {
+        StringWriter errors = new StringWriter();
+        e.printStackTrace(new PrintWriter(errors));
+        return errors.toString();
     }
 }
