@@ -44,12 +44,19 @@ public class MainActivity extends AppCompatActivity {
                 goToAccount(0);
             }
         });
+
+        Intent serviceItem = new Intent(getApplicationContext(), Queue.class);
+        serviceItem.setAction(Global.START_SERVICE);
+        Log.e("fcrow", "---------------------- about to service intent");
+        startService(serviceItem);
+
     }
 
     @Override
     public void onResume(){
         super.onResume();
-        List<AccountData> addata = (List<AccountData>) Orm.byQuery(dbh.getReadableDatabase(), Account.tableName, AccountData.class, null, null);
+        List<AccountData> addata = (List<AccountData>) Orm.byQuery(dbh.getReadableDatabase(),
+                Account.tableName, AccountData.class, null, null, null, null);
 
         lview = (ListView) findViewById(R.id.accountList);
         AccountAdapter adapter = (AccountAdapter)lview.getAdapter();

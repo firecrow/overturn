@@ -1,13 +1,17 @@
 package tech.overturn.crowmail.models;
 
+import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
 import java.lang.reflect.Field;
 import java.sql.SQLClientInfoException;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import tech.overturn.crowmail.Data;
 import tech.overturn.crowmail.ModelBase;
 import tech.overturn.crowmail.Orm;
 
@@ -33,5 +37,4 @@ public class Account extends ModelBase {
             Orm.insert(db, Account.tableName, data);
         }
     }
-
 }

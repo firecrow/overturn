@@ -1,6 +1,9 @@
 package tech.overturn.crowmail;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -16,6 +19,7 @@ public class AccountActivity extends AppCompatActivity {
 
     public Account a;
     DBHelper dbh;
+    LocalReciever localReciever;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +41,7 @@ public class AccountActivity extends AppCompatActivity {
         TextView blink = (TextView)findViewById(R.id.backLink);
         TextView slink = (TextView)findViewById(R.id.sendLink);
         TextView flink = (TextView)findViewById(R.id.fetchLink);
+        TextView llink = (TextView)findViewById(R.id.ledgerLink);
         View.OnClickListener back = new View.OnClickListener() {
             public void onClick(View v) {
                 goToMain();
@@ -56,10 +61,27 @@ public class AccountActivity extends AppCompatActivity {
                 startService(fetchItem);
             }
         };
+        View.OnClickListener ledger = new View.OnClickListener() {
+            public void onClick(View v) {
+                goToLedger(new Long(a.data._id));
+            }
+        };
         btn.setOnClickListener(back);
         blink.setOnClickListener(back);
         slink.setOnClickListener(send);
         flink.setOnClickListener(fetch);
+        llink.setOnClickListener(ledger);
+
+        localReciever = new LocalReciever();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Global.NETWORK_STATUS);
+        registerReceiver(localReciever, filter);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(localReciever);
     }
 
     @Override
@@ -96,9 +118,25 @@ public class AccountActivity extends AppCompatActivity {
     public void goToMain() {
         startActivity(new Intent(this, MainActivity.class));
     }
+
+    public void goToLedger(Long id) {
+        Intent intent = new Intent(this, LedgerActivity.class);
+        Log.d("fcrow",String.format("go to ledger %d", id));
+        intent.putExtra("account_id", id.longValue());
+        startActivity(intent);
+    }
+
     public void goToSend(long id) {
         Intent intent = new Intent(this, SendActivity.class);
         intent.putExtra("account_id", id);
         startActivity(intent);
+    }
+
+    private class LocalReciever extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(final Context context, Intent intent) {
+            Log.d("fcrow", String.format("----- account recieved action:", intent.getAction()));
+        }
     }
 }

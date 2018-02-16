@@ -10,69 +10,95 @@ import android.os.Handler;
 import android.support.v7.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
+import android.view.InputQueue;
 import android.widget.Toast;
 
+import com.sun.mail.iap.ConnectionException;
 import com.sun.mail.iap.ProtocolException;
 import com.sun.mail.imap.IMAPFolder;
 import com.sun.mail.imap.protocol.IMAPProtocol;
 import com.sun.mail.imap.protocol.Status;
 
 
+import java.net.ConnectException;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.TimeoutException;
 
 import javax.mail.Folder;
+import javax.mail.FolderClosedException;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.Store;
 import javax.mail.URLName;
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
 import tech.overturn.crowmail.models.Account;
-import tech.overturn.crowmail.models.ErrorStatus;
+import tech.overturn.crowmail.models.CrowMessage;
+import tech.overturn.crowmail.models.Ledger;
 
 import static android.content.Context.NOTIFICATION_SERVICE;
 
 public class Fetcher {
 
     Account a;
-    IMAPFolder folder;
-    Store store;
-    URLName url;
-    Properties props;
-    Session session;
-    int FETCH_DELAY = 1000 * 60 * 1;
     Context context;
-
     DBHelper dbh;
 
+    Properties props;
+    URLName url;
+    Session session;
+    Store store;
+    IMAPFolder folder;
+
+    String action = "fetch";
+    public Integer failCount = 0;
+    public Date latestFailure;
+    public static Long MAX_ADJUSTED_FAIL = 15L;
+    public static Long RELEASE_TIME = 1000 * 60 * 2L;
+    public static Long TIMEOUT = 1000 * 5L;
+    //Long FETCH_DELAY = 1000 * 60 * 1L;
+    public static Long FETCH_DELAY = 1000 * 15L;
+
+
     public Fetcher(Context context, Account a) {
-        dbh = new DBHelper(context);
+        this.dbh = new DBHelper(context);
         this.a = a;
         this.context = context;
+        this.props = getProperties();
+        url = getURLName(this.props);
+    }
 
-        String protocol;
-        props = System.getProperties();
+    private Properties getProperties() {
+        Properties props = System.getProperties();
         if (a.data.imapSslType.equals("STARTTLS")) {
-            Log.d("frow","----STARTTLS");
             props.setProperty("mail.imap.auth", "true");
-            props.setProperty("mail.imap.timeout", "5000");
-            props.setProperty("mail.imap.connectiontimeout", "5000");
+            props.setProperty("mail.imap.timeout", TIMEOUT.toString());
+            props.setProperty("mail.imap.connectiontimeout", TIMEOUT.toString());
             props.setProperty("mail.imap.socketFactory.class", "tech.overturn.crowmail.SSLCrowFactory");
             props.setProperty("ssl.SocketFactory.provider", "tech.overturn.crowmail.SSLCrowFactory");
             props.setProperty("mail.imap.socketFactory.port", a.data.imapPort.toString());
             props.setProperty("mail.imap.starttls.enable", "true");
-            protocol = "imap";
         } else {
-            protocol = "imaps";
-            props.setProperty("mail.imaps.timeout", "5000");
-            props.setProperty("mail.imaps.connectiontimeout", "5000");
+            props.setProperty("mail.imaps.timeout", TIMEOUT.toString());
+            props.setProperty("mail.imaps.connectiontimeout", TIMEOUT.toString());
         }
-        url = new URLName(
+        return props;
+    }
+
+    public URLName getURLName(Properties props) {
+        String protocol = a.data.imapSslType.equals("STARTTLS") ? "imap" : "imaps";
+        return new URLName(
                 protocol,
                 a.data.imapHost,
                 a.data.imapPort,
@@ -81,139 +107,148 @@ public class Fetcher {
                 a.data.password);
     }
 
-    public boolean connect() {
-        Long start = new Date().getTime();
-        try {
-            session = Session.getInstance(props);
-            start = new Date().getTime();
-            store = session.getStore(url);
-            start = new Date().getTime();
-            store.connect();
-            start = new Date().getTime();
-            folder = (IMAPFolder) store.getFolder(url);
-            start = new Date().getTime();
-            folder.open(Folder.READ_ONLY);
-            start = new Date().getTime();
-            if(!folder.isOpen()){
-                throw new Exception(String.format("Folder '%s' is not open in Fetcher.connect", folder.getName()));
-            }
-            return true;
-        } catch(Exception e) {
-            Log.d("fcrow","------- Error in Fetcher connect "+ e.getMessage(), e);
-            String key = String.format("connect error millis: %d", (new Date().getTime()-start));
-            ErrorStatus err = new ErrorStatus();
-            err.key = key;
-            err.message = e.getMessage();
-            if(e.getCause() != null) {
-                err.cause = e.getCause().getClass().getSimpleName();
-            }else {
-                err.cause = e.getClass().getSimpleName();
-            }
-            err.account_id = a.data._id;
-            err.stack = ErrorStatus.stackToString(e);
-            err.log(dbh.getWritableDatabase());
-            err.sendNotify(context, true);
-            return false;
-        }
+    private void connect() throws MessagingException {
+        session = Session.getInstance(props);
+        store = session.getStore(url);
+        store.connect();
+        folder = (IMAPFolder) store.getFolder(url);
+        folder.open(Folder.READ_ONLY);
     }
 
-    public void loop() {
-        ErrorStatus err;
+    private Long getUidNext(IMAPFolder folder, final String folderName) throws MessagingException {
+        return (Long) folder.doCommand(new IMAPFolder.ProtocolCommand() {
+            public Object doCommand(IMAPProtocol p)
+            throws ProtocolException {
+               Status status = p.status(folderName, new String[]{"uidnext"});
+               return status.uidnext;
+            }
+        });
+    }
 
-        err = new ErrorStatus();
-        err.key = "loop start";
-        err.account_id = a.data._id;
-        err.log(dbh.getWritableDatabase());
-        err.sendNotify(context, false);
+    private Long fetchMail() throws MessagingException {
+        Long uidnext = getUidNext(folder, "Inbox");
+        Integer previous = (a.data.uidnext != null && a.data.uidnext != 0) ? a.data.uidnext : 1;
+        if (previous != uidnext.intValue()) {
+            Message[] msgs = folder.getMessagesByUID(previous, uidnext - 1);
+            notifyUpdates(msgs);
+            a.data.uidnext = uidnext.intValue();
+            a.save(dbh.getWritableDatabase());
+            Log.d("fcrow", String.format("---- fetching %d..%d", previous, uidnext));
+            new Ledger(
+                    a.data._id,
+                    new Date(),
+                    Ledger.MESSAGE_COUNT_TYPE,
+                    String.format("messages %d..%d", previous, uidnext),
+                    Long.valueOf(msgs.length),
+                    null
+            ).log(dbh.getWritableDatabase(), context);
+        }
+        if(folder != null && folder.isOpen()) {
+            folder.close(false);
+        }
+        if(store != null && store.isConnected()) {
+            store.close();
+        }
+        return uidnext;
+    }
 
+    private void notifyUpdates(Message[] msgs) throws MessagingException {
+        Log.d("fcrow", String.format("---- %d emails", msgs.length));
         String msg_group_key;
         if (a.data._id != null) {
             msg_group_key = String.format("%s%d", Global.CROWMAIL, a.data._id);
         } else {
             msg_group_key = Global.CROWMAIL;
         }
-        if(a.data.uidnext == null || a.data.uidnext == 0){
-            a.data.uidnext = 1;
+        for (int i = 0; i < msgs.length; i++) {
+            String from = msgs[i].getFrom()[0].toString();
+            String subject = msgs[i].getSubject();
+            new CrowNotification(context).send(from, subject, msg_group_key, R.drawable.notif, false);
         }
-        try {
-            while(true) {
-                if(connect()) {
-                    Long uidnext = (Long) folder.doCommand(new IMAPFolder.ProtocolCommand() {
-                        public Object doCommand(IMAPProtocol p)
-                                throws ProtocolException {
-                            Status status = p.status("Inbox", new String[]{"uidnext"});
-                            return status.uidnext;
-                        }
-                    });
-                    Log.d("fcrow", String.format("-------- next %d", uidnext));
-                    Integer previous = a.data.uidnext;
-                    if (previous != uidnext.intValue()) {
-                        NotificationManagerCompat nmng = NotificationManagerCompat.from(context);
-                        Message[] msgs = folder.getMessagesByUID(a.data.uidnext, uidnext - 1);
-                        Notification sum = new Notification.Builder(context)
-                                .setSmallIcon(R.drawable.notif)
-                                .setContentTitle(a.data.email)
-                                .setGroupSummary(true)
-                                .setGroup(msg_group_key)
-                                .build();
-                        nmng.notify(msg_group_key, 0, sum);
-                        for (int i = 0; i < msgs.length; i++) {
-                            Log.d("fcrow", String.format("-------- new mail %s:%s", msgs[i].getFrom()[0], msgs[i].getSubject()));
-                            Notification n = new Notification.Builder(context)
-                                    .setContentTitle(msgs[i].getFrom()[0].toString())
-                                    .setContentText(msgs[i].getSubject())
-                                    .setSmallIcon(R.drawable.notif)
-                                    .setGroupSummary(false)
-                                    .setGroup(msg_group_key)
-                                    .build();
-                            nmng.notify(msg_group_key, previous + i, n);
-                        }
-                        a.data.uidnext = uidnext.intValue();
-                        a.save(dbh.getWritableDatabase());
+    }
+
+    public void loop(){
+        Ledger.fromStrings(context, dbh.getWritableDatabase(),
+                Ledger.INFO_TYPE,
+                a.data._id,
+                "fetch task created", 
+                "",
+                false
+        );
+        final Fetcher self = this;
+        final Runnable runnable = new Runnable() {
+            final Account _account = a;
+            @Override
+            public void run() {
+                while (true) {
+                    Long delay = Fetcher.FETCH_DELAY;
+                    CrowmailException cme = null;
+                    Date startDebug = new Date();
+                    Long uidnext;
+                    try {
+                        connect();
+                        uidnext = fetchMail();
+                        new Ledger(
+                                _account.data._id,
+                                new Date(),
+                                Ledger.LATEST_FETCH_TYPE,
+                                String.format("duration %d",new Date().getTime() - startDebug.getTime()),
+                                uidnext,
+                                null
+                        ).log(Global.getWriteDb(context), context);
+                    } catch (Exception e) {
+                        delay *= 3;
+                        new Ledger(
+                                _account.data._id,
+                                new Date(),
+                                Ledger.NETWORK_UNREACHABLE,
+                                _account.data.imapHost,
+                                new Date().getTime() - startDebug.getTime(),
+                                Global.stackToString(e)
+                        ).log(Global.getWriteDb(context), context);
+                    }
+                    try {
+                        Thread.sleep(delay);
+                    } catch (InterruptedException e) {
+                        cme = new CrowmailException(CrowmailException.UNKNOWN, "sleep_interrupted", e, a);
+                        Ledger.fromCme(context, dbh.getWritableDatabase(), "loop_initerrupted", cme, false);
+                        break;
                     }
                 }
-                if(folder != null && folder.isOpen()) {
-                    folder.close(false);
-                }
-                if(store != null && store.isConnected()) {
-                    store.close();
-                }
-                Thread.sleep(FETCH_DELAY);
             }
+        };
+        new Thread(runnable).start();
+    }
 
-        } catch (InterruptedException e) {
-            Log.d("fcrow", "------- Error in Fetcher loop " + e.getMessage(), e);
-            err = new ErrorStatus();
-            err.key = "fetch interupt";
-            err.message = e.getMessage();
-            err.cause = e.getClass().getSimpleName();
-            err.account_id = a.data._id;
-            err.log(dbh.getWritableDatabase());
-            err.sendNotify(context, false);
+    public Long getDelay() {
+        return FETCH_DELAY;
+    }
 
-        } catch (MessagingException e) {
-            Log.d("fcrow", "------- Error in Fetcher loop " + e.getMessage(), e);
-            err = new ErrorStatus();
-            err.key = "fetch";
-            err.message = e.getMessage();
-            err.cause = e.getClass().getSimpleName();
-            err.account_id = a.data._id;
-            err.log(dbh.getWritableDatabase());
-            err.sendNotify(context, false);
-        } catch (Exception e) {
-            Log.d("fcrow", "------- Error in Fetcher loop " + e.getMessage(), e);
-            err = new ErrorStatus();
-            err.key = "fetch_generic";
-            err.message = e.getMessage();
-            err.cause = e.getClass().getSimpleName();
-            err.account_id = a.data._id;
-            err.log(dbh.getWritableDatabase());
-            err.sendNotify(context, false);
+    public String getAction() {
+        return action;
+    }
+
+    private boolean updateFailureStats() {
+        if(this.latestFailure == null) {
+            this.latestFailure = new Date();
         }
-        err = new ErrorStatus();
-        err.key = "loop finished";
-        err.account_id = a.data._id;
-        err.log(dbh.getWritableDatabase());
-        err.sendNotify(context, false);
+        Date previous = this.latestFailure;
+        this.latestFailure = new Date();
+        if(this.latestFailure.getTime() - previous.getTime() > RELEASE_TIME){
+            this.failCount = 0;
+        }else {
+            this.failCount++;
+        }
+        Log.d("fcrow", String.format("Fetcher.failCount:%d", this.failCount));
+        return this.failCount <= MAX_ADJUSTED_FAIL;
+    }
+
+    public Long askRetry(CrowmailException e) {
+        Log.d("fcrow", "--- ask retry");
+        if(updateFailureStats()) {
+            return this.getDelay();
+        }
+        Ledger.fromCme(context, dbh.getWritableDatabase(), "too manny failures", e, false);
+        return -1L;
     }
 }
