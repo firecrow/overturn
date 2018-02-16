@@ -53,7 +53,6 @@ public class Fetcher {
 
     Account a;
     Context context;
-    DBHelper dbh;
 
     Properties props;
     URLName url;
@@ -61,18 +60,11 @@ public class Fetcher {
     Store store;
     IMAPFolder folder;
 
-    String action = "fetch";
-    public Integer failCount = 0;
-    public Date latestFailure;
-    public static Long MAX_ADJUSTED_FAIL = 15L;
-    public static Long RELEASE_TIME = 1000 * 60 * 2L;
     public static Long TIMEOUT = 1000 * 5L;
-    //Long FETCH_DELAY = 1000 * 60 * 1L;
     public static Long FETCH_DELAY = 1000 * 15L;
 
 
     public Fetcher(Context context, Account a) {
-        this.dbh = new DBHelper(context);
         this.a = a;
         this.context = context;
         this.props = getProperties();
@@ -132,7 +124,7 @@ public class Fetcher {
             Message[] msgs = folder.getMessagesByUID(previous, uidnext - 1);
             notifyUpdates(msgs);
             a.data.uidnext = uidnext.intValue();
-            a.save(dbh.getWritableDatabase());
+            a.save(Global.getWriteDb(context));
             Log.d("fcrow", String.format("---- fetching %d..%d", previous, uidnext));
             new Ledger(
                     a.data._id,
@@ -141,7 +133,7 @@ public class Fetcher {
                     String.format("messages %d..%d", previous, uidnext),
                     Long.valueOf(msgs.length),
                     null
-            ).log(dbh.getWritableDatabase(), context);
+            ).log(Global.getWriteDb(context), context);
         }
         if(folder != null && folder.isOpen()) {
             folder.close(false);
@@ -168,7 +160,7 @@ public class Fetcher {
     }
 
     public void loop(){
-        Ledger.fromStrings(context, dbh.getWritableDatabase(),
+        Ledger.fromStrings(context, Global.getWriteDb(context),
                 Ledger.INFO_TYPE,
                 a.data._id,
                 "fetch task created", 
@@ -211,44 +203,12 @@ public class Fetcher {
                         Thread.sleep(delay);
                     } catch (InterruptedException e) {
                         cme = new CrowmailException(CrowmailException.UNKNOWN, "sleep_interrupted", e, a);
-                        Ledger.fromCme(context, dbh.getWritableDatabase(), "loop_initerrupted", cme, false);
+                        Ledger.fromCme(context, Global.getWriteDb(context), "loop_initerrupted", cme, false);
                         break;
                     }
                 }
             }
         };
         new Thread(runnable).start();
-    }
-
-    public Long getDelay() {
-        return FETCH_DELAY;
-    }
-
-    public String getAction() {
-        return action;
-    }
-
-    private boolean updateFailureStats() {
-        if(this.latestFailure == null) {
-            this.latestFailure = new Date();
-        }
-        Date previous = this.latestFailure;
-        this.latestFailure = new Date();
-        if(this.latestFailure.getTime() - previous.getTime() > RELEASE_TIME){
-            this.failCount = 0;
-        }else {
-            this.failCount++;
-        }
-        Log.d("fcrow", String.format("Fetcher.failCount:%d", this.failCount));
-        return this.failCount <= MAX_ADJUSTED_FAIL;
-    }
-
-    public Long askRetry(CrowmailException e) {
-        Log.d("fcrow", "--- ask retry");
-        if(updateFailureStats()) {
-            return this.getDelay();
-        }
-        Ledger.fromCme(context, dbh.getWritableDatabase(), "too manny failures", e, false);
-        return -1L;
     }
 }
