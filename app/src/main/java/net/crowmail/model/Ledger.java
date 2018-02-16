@@ -2,7 +2,6 @@ package net.crowmail.model;
 
 import net.crowmail.R;
 import net.crowmail.util.CrowNotification;
-import net.crowmail.util.CrowmailException;
 import net.crowmail.util.Global;
 import net.crowmail.util.Orm;
 

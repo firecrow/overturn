@@ -34,7 +34,6 @@ import net.crowmail.R;
 import net.crowmail.model.Account;
 import net.crowmail.model.Ledger;
 import net.crowmail.util.CrowNotification;
-import net.crowmail.util.CrowmailException;
 import net.crowmail.util.Global;
 
 public class Fetcher {
@@ -163,7 +162,6 @@ public class Fetcher {
             public void run() {
                 while (true) {
                     Long delay = Fetcher.FETCH_DELAY;
-                    CrowmailException cme = null;
                     Date startDebug = new Date();
                     Long uidnext;
                     try {
