@@ -1,4 +1,4 @@
-package tech.overturn.crowmail;
+package tech.overturn.crowmail.service;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;

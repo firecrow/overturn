@@ -1,6 +1,6 @@
-package tech.overturn.crowmail.struct;
+package tech.overturn.crowmail.vector;
 
-import tech.overturn.crowmail.Data;
+import tech.overturn.crowmail.model.Data;
 
 public class EmailWithType extends Data {
     Integer _id;

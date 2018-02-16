@@ -1,4 +1,4 @@
-package tech.overturn.crowmail;
+package tech.overturn.crowmail.service;
 
 import android.util.Log;
 
@@ -22,8 +22,8 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import javax.activation.DataSource;
 
-import tech.overturn.crowmail.models.Account;
-import tech.overturn.crowmail.models.CrowMessage;
+import tech.overturn.crowmail.model.Account;
+import tech.overturn.crowmail.model.CrowMessage;
 
 public class Mailer extends javax.mail.Authenticator {
     Account a;

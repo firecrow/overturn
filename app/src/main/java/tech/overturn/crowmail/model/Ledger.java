@@ -1,25 +1,19 @@
-package tech.overturn.crowmail.models;
+package tech.overturn.crowmail.model;
 
-import tech.overturn.crowmail.CrowNotification;
-import tech.overturn.crowmail.CrowmailException;
-import tech.overturn.crowmail.Global;
 import tech.overturn.crowmail.R;
-import android.app.Notification;
+import tech.overturn.crowmail.util.CrowNotification;
+import tech.overturn.crowmail.util.CrowmailException;
+import tech.overturn.crowmail.util.Global;
+import tech.overturn.crowmail.util.Orm;
+
 import android.content.Context;
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
-import android.support.constraint.solver.Goal;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Date;
-
-import tech.overturn.crowmail.Data;
-import tech.overturn.crowmail.Orm;
-
 
 public class Ledger extends Data {
     public static String tableName  = "ledger";

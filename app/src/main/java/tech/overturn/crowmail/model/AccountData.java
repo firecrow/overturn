@@ -1,6 +1,6 @@
-package tech.overturn.crowmail.models;
+package tech.overturn.crowmail.model;
 
-import tech.overturn.crowmail.Data;
+import tech.overturn.crowmail.model.Data;
 
 public class AccountData extends Data {
     public Integer _id;

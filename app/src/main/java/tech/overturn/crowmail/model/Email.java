@@ -1,8 +1,8 @@
-package tech.overturn.crowmail.models;
+package tech.overturn.crowmail.model;
 
 import javax.mail.internet.InternetAddress;
 
-import tech.overturn.crowmail.Data;
+import tech.overturn.crowmail.model.Data;
 
 public class Email extends Data {
     public static String tableName = "email";

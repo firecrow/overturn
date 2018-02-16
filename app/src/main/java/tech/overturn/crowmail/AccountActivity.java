@@ -12,8 +12,11 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import tech.overturn.crowmail.models.Account;
-import tech.overturn.crowmail.models.AccountData;
+import tech.overturn.crowmail.model.Account;
+import tech.overturn.crowmail.model.AccountData;
+import tech.overturn.crowmail.service.Queue;
+import tech.overturn.crowmail.util.Global;
+import tech.overturn.crowmail.util.Orm;
 
 public class AccountActivity extends AppCompatActivity {
 

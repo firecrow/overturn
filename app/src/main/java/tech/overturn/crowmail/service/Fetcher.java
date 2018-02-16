@@ -1,4 +1,4 @@
-package tech.overturn.crowmail;
+package tech.overturn.crowmail.service;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -20,34 +20,22 @@ import com.sun.mail.imap.protocol.IMAPProtocol;
 import com.sun.mail.imap.protocol.Status;
 
 
-import java.net.ConnectException;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.TimeoutException;
 
 import javax.mail.Folder;
-import javax.mail.FolderClosedException;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.Store;
 import javax.mail.URLName;
-import javax.net.SocketFactory;
-import javax.net.ssl.SSLHandshakeException;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
 
-import tech.overturn.crowmail.models.Account;
-import tech.overturn.crowmail.models.CrowMessage;
-import tech.overturn.crowmail.models.Ledger;
-
-import static android.content.Context.NOTIFICATION_SERVICE;
+import tech.overturn.crowmail.R;
+import tech.overturn.crowmail.model.Account;
+import tech.overturn.crowmail.model.Ledger;
+import tech.overturn.crowmail.util.CrowNotification;
+import tech.overturn.crowmail.util.CrowmailException;
+import tech.overturn.crowmail.util.Global;
 
 public class Fetcher {
 

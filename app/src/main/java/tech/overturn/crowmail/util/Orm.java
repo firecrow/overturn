@@ -1,4 +1,4 @@
-package tech.overturn.crowmail;
+package tech.overturn.crowmail.util;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -21,6 +21,9 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
+import tech.overturn.crowmail.model.Data;
+
 import static java.lang.Math.toIntExact;
 
 

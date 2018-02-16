@@ -1,4 +1,4 @@
-package tech.overturn.crowmail;
+package tech.overturn.crowmail.adapters;
 
 import android.app.Activity;
 import android.content.Context;
@@ -10,8 +10,8 @@ import android.widget.TextView;
 
 import java.util.List;
 
-import tech.overturn.crowmail.models.Account;
-import tech.overturn.crowmail.models.AccountData;
+import tech.overturn.crowmail.R;
+import tech.overturn.crowmail.model.AccountData;
 
 public class AccountAdapter extends ArrayAdapter<AccountData> {
     Context context;

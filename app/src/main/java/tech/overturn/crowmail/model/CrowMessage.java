@@ -1,24 +1,19 @@
-package tech.overturn.crowmail.models;
+package tech.overturn.crowmail.model;
 
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
 import com.sun.mail.iap.ByteArray;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import javax.mail.Address;
-import javax.mail.Message;
 import javax.mail.internet.InternetAddress;
 
-import tech.overturn.crowmail.Data;
-import tech.overturn.crowmail.ModelBase;
-import tech.overturn.crowmail.Orm;
-import tech.overturn.crowmail.struct.EmailWithType;
+import tech.overturn.crowmail.util.Orm;
+import tech.overturn.crowmail.vector.EmailWithType;
 
 public class CrowMessage extends ModelBase {
     public static String tableName = "message";

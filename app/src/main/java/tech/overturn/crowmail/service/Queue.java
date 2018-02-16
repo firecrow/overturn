@@ -1,31 +1,17 @@
-package tech.overturn.crowmail;
+package tech.overturn.crowmail.service;
 
-import android.app.IntentService;
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.net.ConnectivityManager;
-import android.net.ConnectivityManager.NetworkCallback;
-import android.net.Network;
-import android.net.NetworkCapabilities;
-import android.net.NetworkInfo;
-import android.net.NetworkRequest;
-import android.os.HandlerThread;
 import android.os.IBinder;
-import android.os.Looper;
-import android.os.SystemClock;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
-import android.widget.Toast;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import tech.overturn.crowmail.models.Account;
-import tech.overturn.crowmail.models.CrowMessage;
-import tech.overturn.crowmail.models.Ledger;
+import tech.overturn.crowmail.model.Account;
+import tech.overturn.crowmail.model.CrowMessage;
+import tech.overturn.crowmail.model.Ledger;
+import tech.overturn.crowmail.util.Global;
 
 public class Queue extends Service {
 

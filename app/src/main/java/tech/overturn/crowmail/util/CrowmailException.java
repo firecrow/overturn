@@ -1,6 +1,6 @@
-package tech.overturn.crowmail;
+package tech.overturn.crowmail.util;
 
-import tech.overturn.crowmail.models.Account;
+import tech.overturn.crowmail.model.Account;
 
 public class CrowmailException extends RuntimeException {
 

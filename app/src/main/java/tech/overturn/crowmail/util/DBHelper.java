@@ -1,17 +1,18 @@
-package tech.overturn.crowmail;
+package tech.overturn.crowmail.util;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
-import tech.overturn.crowmail.models.Account;
-import tech.overturn.crowmail.models.AccountData;
-import tech.overturn.crowmail.models.CrowMessage;
-import tech.overturn.crowmail.models.CrowMessageData;
-import tech.overturn.crowmail.models.Email;
-import tech.overturn.crowmail.models.EmailToMsg;
-import tech.overturn.crowmail.models.Ledger;
+import tech.overturn.crowmail.util.Orm;
+import tech.overturn.crowmail.model.Account;
+import tech.overturn.crowmail.model.AccountData;
+import tech.overturn.crowmail.model.CrowMessage;
+import tech.overturn.crowmail.model.CrowMessageData;
+import tech.overturn.crowmail.model.Email;
+import tech.overturn.crowmail.model.EmailToMsg;
+import tech.overturn.crowmail.model.Ledger;
 
 public class DBHelper extends SQLiteOpenHelper {
     public static final int DB_VERSION = 8;

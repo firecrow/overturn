@@ -1,4 +1,4 @@
-package tech.overturn.crowmail;
+package tech.overturn.crowmail.util;
 
 // copied generouslly from https://stackoverflow.com/questions/1219404/exchange-server-will-not-accept-username-password-provided-with-javax-mail-api/1219941#1219941
 // by javashlook

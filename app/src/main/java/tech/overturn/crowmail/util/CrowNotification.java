@@ -1,4 +1,4 @@
-package tech.overturn.crowmail;
+package tech.overturn.crowmail.util;
 
 import android.app.Notification;
 import android.content.Context;

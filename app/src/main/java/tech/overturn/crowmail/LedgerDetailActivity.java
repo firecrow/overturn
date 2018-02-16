@@ -10,7 +10,9 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
-import tech.overturn.crowmail.models.Ledger;
+import tech.overturn.crowmail.model.Ledger;
+import tech.overturn.crowmail.util.Global;
+import tech.overturn.crowmail.util.Orm;
 
 public class LedgerDetailActivity extends AppCompatActivity {
 

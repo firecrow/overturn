@@ -1,19 +1,7 @@
-package tech.overturn.crowmail.models;
+package tech.overturn.crowmail.model;
 
-import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
-import android.util.Log;
-
-import java.lang.reflect.Field;
-import java.sql.SQLClientInfoException;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import tech.overturn.crowmail.Data;
-import tech.overturn.crowmail.ModelBase;
-import tech.overturn.crowmail.Orm;
+import tech.overturn.crowmail.util.Orm;
 
 public class Account extends ModelBase {
     public AccountData data;

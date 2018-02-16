@@ -1,4 +1,4 @@
-package tech.overturn.crowmail;
+package tech.overturn.crowmail.model;
 
 public abstract class Data {
     public abstract Integer getId();

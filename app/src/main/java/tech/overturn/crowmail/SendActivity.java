@@ -17,9 +17,13 @@ import java.util.List;
 
 import javax.mail.internet.InternetAddress;
 
-import tech.overturn.crowmail.models.Account;
-import tech.overturn.crowmail.models.AccountData;
-import tech.overturn.crowmail.models.CrowMessage;
+import tech.overturn.crowmail.model.Account;
+import tech.overturn.crowmail.model.AccountData;
+import tech.overturn.crowmail.model.CrowMessage;
+import tech.overturn.crowmail.service.Queue;
+import tech.overturn.crowmail.service.Receiver;
+import tech.overturn.crowmail.util.Global;
+import tech.overturn.crowmail.util.Orm;
 
 public class SendActivity extends AppCompatActivity {
     Account a;

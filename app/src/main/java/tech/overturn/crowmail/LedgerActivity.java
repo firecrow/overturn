@@ -5,10 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -17,7 +14,10 @@ import android.widget.TextView;
 
 import java.util.List;
 
-import tech.overturn.crowmail.models.Ledger;
+import tech.overturn.crowmail.adapters.LedgerAdapter;
+import tech.overturn.crowmail.model.Ledger;
+import tech.overturn.crowmail.util.Global;
+import tech.overturn.crowmail.util.Orm;
 
 public class LedgerActivity extends AppCompatActivity {
 

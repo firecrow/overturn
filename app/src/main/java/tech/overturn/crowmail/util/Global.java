@@ -1,4 +1,4 @@
-package tech.overturn.crowmail;
+package tech.overturn.crowmail.util;
 
 import android.content.Context;
 import android.content.Intent;
@@ -13,7 +13,7 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 
-import tech.overturn.crowmail.models.Ledger;
+import tech.overturn.crowmail.model.Ledger;
 
 public class Global {
     public static final String CROWMAIL = "crowmail";

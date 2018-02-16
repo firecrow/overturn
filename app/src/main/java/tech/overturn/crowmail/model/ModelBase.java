@@ -1,4 +1,4 @@
-package tech.overturn.crowmail;
+package tech.overturn.crowmail.model;
 
 import android.util.Log;
 import android.view.View;

@@ -1,11 +1,11 @@
-package tech.overturn.crowmail.models;
+package tech.overturn.crowmail.model;
 
 import android.view.Display;
 
 import java.sql.Timestamp;
 
-import tech.overturn.crowmail.Data;
-import tech.overturn.crowmail.ModelBase;
+import tech.overturn.crowmail.model.Data;
+import tech.overturn.crowmail.model.ModelBase;
 
 public class CrowMessageData extends Data {
     public Integer _id;

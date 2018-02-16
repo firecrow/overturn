@@ -1,4 +1,4 @@
-package tech.overturn.crowmail;
+package tech.overturn.crowmail.adapters;
 
 import android.app.Activity;
 import android.content.Context;
@@ -10,9 +10,10 @@ import android.widget.TextView;
 
 import java.util.List;
 
-import tech.overturn.crowmail.models.Account;
-import tech.overturn.crowmail.models.AccountData;
-import tech.overturn.crowmail.models.Ledger;
+import tech.overturn.crowmail.R;
+import tech.overturn.crowmail.model.Account;
+import tech.overturn.crowmail.model.AccountData;
+import tech.overturn.crowmail.model.Ledger;
 
 public class LedgerAdapter extends ArrayAdapter<Ledger> {
     Context context;
