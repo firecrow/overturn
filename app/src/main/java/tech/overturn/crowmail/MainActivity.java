@@ -20,14 +20,12 @@ import tech.overturn.crowmail.models.AccountData;
 
 public class MainActivity extends AppCompatActivity {
 
-    DBHelper dbh;
     ListView lview;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        dbh = new DBHelper(getBaseContext());
         lview = (ListView) findViewById(R.id.accountList);
         lview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -55,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onResume(){
         super.onResume();
-        List<AccountData> addata = (List<AccountData>) Orm.byQuery(dbh.getReadableDatabase(),
+        List<AccountData> addata = (List<AccountData>) Orm.byQuery(Global.getReadDb(getApplicationContext()),
                 Account.tableName, AccountData.class, null, null, null, null);
 
         lview = (ListView) findViewById(R.id.accountList);

@@ -23,17 +23,15 @@ import tech.overturn.crowmail.models.CrowMessage;
 
 public class SendActivity extends AppCompatActivity {
     Account a;
-    DBHelper dbh;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_send);
-        dbh = new DBHelper(getBaseContext());
         Intent intent = getIntent();
         Long id = intent.getLongExtra("account_id", 0);
         this.a = new Account();
-        a.data = (AccountData) Orm.byId(dbh.getReadableDatabase(), Account.tableName, AccountData.class, id.intValue());
+        a.data = (AccountData) Orm.byId(Global.getReadDb(getApplicationContext()), Account.tableName, AccountData.class, id.intValue());
         Button sendBtn = (Button) findViewById(R.id.sendBtn);
         sendBtn.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -53,7 +51,7 @@ public class SendActivity extends AppCompatActivity {
 
     public void send() {
         Log.d("fcrow", "---- in send in sendActivity");
-        CrowMessage cmsg = new CrowMessage(dbh.getWritableDatabase());
+        CrowMessage cmsg = new CrowMessage(Global.getWriteDb(getApplicationContext()));
         try {
             cmsg.from = new InternetAddress(a.data.email);
             String toText = ((EditText) findViewById(R.id.sendTo)).getText().toString();

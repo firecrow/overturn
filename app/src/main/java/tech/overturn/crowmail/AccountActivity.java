@@ -18,21 +18,19 @@ import tech.overturn.crowmail.models.AccountData;
 public class AccountActivity extends AppCompatActivity {
 
     public Account a;
-    DBHelper dbh;
     LocalReciever localReciever;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_account);
-        dbh = new DBHelper(getBaseContext());
         Intent intent = getIntent();
         Long id = intent.getLongExtra("account_id", 0);
         if (id == 0) {
             this.a = new Account();
         } else {
             this.a = new Account();
-            a.data = (AccountData) Orm.byId(dbh.getReadableDatabase(), Account.tableName, AccountData.class, id.intValue());
+            a.data = (AccountData) Orm.byId(Global.getWriteDb(getApplicationContext()), Account.tableName, AccountData.class, id.intValue());
             Log.d("fcrow", String.format("------------_id:%d imapHost:%s", a.data._id, a.data.imapHost));
         }
         setUpUI();
@@ -105,7 +103,7 @@ public class AccountActivity extends AppCompatActivity {
 
     public void save() {
         Log.d("fcrow", String.format("-----in save: _id:%d imapHost:%s", a.data._id, a.data.imapHost));
-        SQLiteDatabase db = dbh.getWritableDatabase();
+        SQLiteDatabase db = Global.getWriteDb(getApplicationContext());
         Orm.backfillFromUI(a.data, a.ui);
         Log.d("fcrow", String.format("-----in save after: _id:%d imapHost:%s", a.data._id, a.data.imapHost));
         if(a.data._id != null) {

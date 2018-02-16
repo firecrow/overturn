@@ -21,7 +21,6 @@ import tech.overturn.crowmail.models.Ledger;
 
 public class LedgerActivity extends AppCompatActivity {
 
-    DBHelper dbh;
     Long account_id;
     ListView lview;
     LocalReceiver recv;
@@ -30,7 +29,6 @@ public class LedgerActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_ledger);
-        dbh = new DBHelper(getBaseContext());
         Intent intent = getIntent();
         this.account_id = intent.getLongExtra("account_id", 0);
         TextView blink = (TextView)findViewById(R.id.backLink);
@@ -63,14 +61,14 @@ public class LedgerActivity extends AppCompatActivity {
 
     private void refresh() {
         /*
-        List<Ledger> ldata = (List<Ledger>) Orm.byQuery(dbh.getReadableDatabase(),
+        List<Ledger> ldata = (List<Ledger>) Orm.byQuery(Global.getWriteDb(getApplicationContext(),
                 Ledger.tableName,
                 Ledger.class,
                 "account_id = ?",
                 new String[] {account_id.toString()},
                 "date desc");
                 */
-        List<Ledger> ldata = (List<Ledger>) Orm.byQuery(dbh.getReadableDatabase(),
+        List<Ledger> ldata = (List<Ledger>) Orm.byQuery(Global.getWriteDb(getApplicationContext()),
                 Ledger.tableName,
                 Ledger.class,
                 null,

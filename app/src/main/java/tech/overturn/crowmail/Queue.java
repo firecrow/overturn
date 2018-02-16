@@ -29,17 +29,15 @@ import tech.overturn.crowmail.models.Ledger;
 
 public class Queue extends Service {
 
-    DBHelper dbh;
     Map<Integer, Account> recieving;
 
     @Override
     public void onCreate() {
-        dbh = new DBHelper(getApplicationContext());
         recieving = new HashMap<Integer, Account>();
         Log.d("fcrow", "---------- service created");
 
         Ledger.fromStrings(getApplicationContext(),
-                dbh.getWritableDatabase(),
+                Global.getWriteDb(getApplicationContext()),
                 Ledger.INFO_TYPE,
                 null, 
                 "service created",
@@ -59,13 +57,13 @@ public class Queue extends Service {
 
         if (intent != null && !intent.getAction().equals(Global.START_SERVICE)) {
             Long account_id = intent.getLongExtra("account_id", 0);
-            final Account a = Account.byId(dbh.getReadableDatabase(), account_id.intValue());
+            final Account a = Account.byId(Global.getReadDb(getApplicationContext()), account_id.intValue());
 
             Long message_id;
             CrowMessage msg;
             if(intent.hasExtra("message_id")) {
                 message_id = intent.getLongExtra("message_id", 0);
-                msg = CrowMessage.byId(dbh.getReadableDatabase(), message_id.intValue());
+                msg = CrowMessage.byId(Global.getReadDb(getApplicationContext()), message_id.intValue());
             }
 
             Log.d("fcrow", String.format("--------------- ACTION: %s", intent.getAction()));
@@ -88,7 +86,7 @@ public class Queue extends Service {
         super.onDestroy();
         Log.d("fcrow", "---------- service destroyed");
         Ledger.fromStrings(getApplicationContext(),
-                dbh.getWritableDatabase(),
+                Global.getWriteDb(getApplicationContext()),
                 Ledger.INFO_TYPE,
                 null,
                 "service destroyed",

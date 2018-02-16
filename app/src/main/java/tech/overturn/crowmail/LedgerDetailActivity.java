@@ -14,17 +14,14 @@ import tech.overturn.crowmail.models.Ledger;
 
 public class LedgerDetailActivity extends AppCompatActivity {
 
-    DBHelper dbh;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_ledger_detail);
-        dbh = new DBHelper(getBaseContext());
         Intent intent = getIntent();
         final Long account_id = intent.getLongExtra("account_id", 0);
         Long ledger_id = intent.getLongExtra("ledger_id", 0);
-        Ledger ledger = (Ledger) Orm.byId(dbh.getReadableDatabase(),
+        Ledger ledger = (Ledger) Orm.byId(Global.getReadDb(getApplicationContext()),
                     Ledger.tableName, Ledger.class, ledger_id.intValue());
         TextView blink = (TextView)findViewById(R.id.lDetBackLink);
         blink.setOnClickListener(new View.OnClickListener() {
