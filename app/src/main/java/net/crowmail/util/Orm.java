@@ -176,7 +176,7 @@ public class Orm {
         return cols.toArray(new String[cols.size()]);
     }
 
-    public static Data byId(SQLiteDatabase db, String table, Class<? extends Data> cls, Integer id) {
+    public static Data byId(SQLiteDatabase db, String table, Class<? extends Data> cls, Long id) {
         String[] cols = getSelectColumns(cls);
         Cursor cursor = db.query(
             table,

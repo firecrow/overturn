@@ -1,21 +1,16 @@
 package net.crowmail;
 
 import android.content.Intent;
-import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.TextView;
 
 import java.util.List;
 
 import net.crowmail.adapters.AccountAdapter;
-import net.crowmail.model.Data;
 import net.crowmail.model.Account;
 import net.crowmail.service.Queue;
 import net.crowmail.util.Global;
@@ -33,7 +28,6 @@ public class MainActivity extends AppCompatActivity {
         lview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Log.e("fcrow", String.format("-------------id %d", id));
                 goToAccount(id);
             }
         });
@@ -48,7 +42,6 @@ public class MainActivity extends AppCompatActivity {
 
         Intent serviceItem = new Intent(getApplicationContext(), Queue.class);
         serviceItem.setAction(Global.START_SERVICE);
-        Log.e("fcrow", "---------------------- about to service intent");
         startService(serviceItem);
 
     }

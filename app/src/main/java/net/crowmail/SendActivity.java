@@ -1,10 +1,6 @@
 package net.crowmail;
 
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.database.sqlite.SQLiteDatabase;
-import android.os.Handler;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -12,15 +8,11 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
-import java.util.Arrays;
-import java.util.List;
-
 import javax.mail.internet.InternetAddress;
 
 import net.crowmail.model.Account;
 import net.crowmail.model.CrowMessage;
 import net.crowmail.service.Queue;
-import net.crowmail.service.Receiver;
 import net.crowmail.util.Global;
 import net.crowmail.util.Orm;
 
@@ -31,10 +23,13 @@ public class SendActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_send);
+
         Intent intent = getIntent();
         Long id = intent.getLongExtra("account_id", 0);
         this.a = new Account();
-        a = (Account) Orm.byId(Global.getReadDb(getApplicationContext()), Account.tableName, Account.class, id.intValue());
+        a = (Account) Orm.byId(Global.getReadDb(getApplicationContext()),
+                Account.tableName, Account.class, id);
+
         Button sendBtn = (Button) findViewById(R.id.sendBtn);
         sendBtn.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -47,13 +42,9 @@ public class SendActivity extends AppCompatActivity {
                 goToAccount();
             }
         });
-
-        IntentFilter filter = new IntentFilter(Global.SEND_ACTION);
-        LocalBroadcastManager.getInstance(this).registerReceiver(new Receiver(), filter);
     }
 
     public void send() {
-        Log.d("fcrow", "---- in send in sendActivity");
         CrowMessage cmsg = new CrowMessage(Global.getWriteDb(getApplicationContext()));
         try {
             cmsg.from = new InternetAddress(a.email);
@@ -67,7 +58,6 @@ public class SendActivity extends AppCompatActivity {
             queueItem.setAction(Global.TRIGGER_SEND);
             queueItem.putExtra("account_id", new Long(a._id).longValue());
             queueItem.putExtra("message_id", new Long(cmsg._id).longValue());
-            Log.e("fcrow", "---------------------- about to send intent");
             startService(queueItem);
         } catch(Exception e) {
             // TODO: HANDLE THESE THINGS

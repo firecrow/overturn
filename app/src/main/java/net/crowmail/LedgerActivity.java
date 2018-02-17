@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
@@ -29,14 +28,17 @@ public class LedgerActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_ledger);
+
         Intent intent = getIntent();
         this.account_id = intent.getLongExtra("account_id", 0);
+
         TextView blink = (TextView)findViewById(R.id.backLink);
         blink.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 goToAccount(account_id);
             }
         });
+
         lview = (ListView) findViewById(R.id.ledgerList);
         lview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -75,7 +77,6 @@ public class LedgerActivity extends AppCompatActivity {
                 null,
                 "date desc",
                 100);
-        Log.d("fcrow", String.format("in resume: %d %d", account_id, ldata.size()));
 
         LedgerAdapter adapter = (LedgerAdapter)lview.getAdapter();
 
@@ -90,7 +91,6 @@ public class LedgerActivity extends AppCompatActivity {
 
     private void goToAccount(Long id) {
         Intent intent = new Intent(this, AccountActivity.class);
-        Log.d("fcrow",String.format("go to ledger %d", id));
         intent.putExtra("account_id", id.longValue());
         startActivity(intent);
     }

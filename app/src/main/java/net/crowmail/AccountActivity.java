@@ -1,13 +1,9 @@
 package net.crowmail;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -20,7 +16,6 @@ import net.crowmail.util.Orm;
 public class AccountActivity extends AppCompatActivity {
 
     public Account a;
-    LocalReciever localReciever;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,8 +26,8 @@ public class AccountActivity extends AppCompatActivity {
         if (id == 0) {
             this.a = new Account();
         } else {
-            this.a = (Account) Orm.byId(Global.getWriteDb(getApplicationContext()), Account.tableName, Account.class, id.intValue());
-            Log.d("fcrow", String.format("------------_id:%d imapHost:%s", a._id, a.imapHost));
+            this.a = (Account) Orm.byId(Global.getWriteDb(getApplicationContext()),
+                    Account.tableName, Account.class, id);
         }
         setUpUI();
         Orm.fillUI(a, a.ui);
@@ -55,14 +50,13 @@ public class AccountActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent fetchItem = new Intent(getApplicationContext(), Queue.class);
                 fetchItem.setAction(Global.TRIGGER_FETCH);
-                fetchItem.putExtra("account_id", new Long(a._id).longValue());
-                Log.e("fcrow", "---------------------- about to fetch intent");
+                fetchItem.putExtra("account_id", a._id);
                 startService(fetchItem);
             }
         };
         View.OnClickListener ledger = new View.OnClickListener() {
             public void onClick(View v) {
-                goToLedger(new Long(a._id));
+                goToLedger(a._id);
             }
         };
         btn.setOnClickListener(back);
@@ -70,17 +64,11 @@ public class AccountActivity extends AppCompatActivity {
         slink.setOnClickListener(send);
         flink.setOnClickListener(fetch);
         llink.setOnClickListener(ledger);
-
-        localReciever = new LocalReciever();
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(Global.NETWORK_STATUS);
-        registerReceiver(localReciever, filter);
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        unregisterReceiver(localReciever);
     }
 
     @Override
@@ -103,10 +91,8 @@ public class AccountActivity extends AppCompatActivity {
     }
 
     public void save() {
-        Log.d("fcrow", String.format("-----in save: _id:%d imapHost:%s", a._id, a.imapHost));
         SQLiteDatabase db = Global.getWriteDb(getApplicationContext());
         Orm.backfillFromUI(a, a.ui);
-        Log.d("fcrow", String.format("-----in save after: _id:%d imapHost:%s", a._id, a.imapHost));
         a.save(db);
     }
 
@@ -116,8 +102,7 @@ public class AccountActivity extends AppCompatActivity {
 
     public void goToLedger(Long id) {
         Intent intent = new Intent(this, LedgerActivity.class);
-        Log.d("fcrow",String.format("go to ledger %d", id));
-        intent.putExtra("account_id", id.longValue());
+        intent.putExtra("account_id", id);
         startActivity(intent);
     }
 
@@ -125,13 +110,5 @@ public class AccountActivity extends AppCompatActivity {
         Intent intent = new Intent(this, SendActivity.class);
         intent.putExtra("account_id", id);
         startActivity(intent);
-    }
-
-    private class LocalReciever extends BroadcastReceiver {
-
-        @Override
-        public void onReceive(final Context context, Intent intent) {
-            Log.d("fcrow", String.format("----- account recieved action:", intent.getAction()));
-        }
     }
 }
