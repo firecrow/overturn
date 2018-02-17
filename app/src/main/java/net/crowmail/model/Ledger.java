@@ -2,6 +2,7 @@ package net.crowmail.model;
 
 import net.crowmail.R;
 import net.crowmail.util.CrowNotification;
+import net.crowmail.util.DbField;
 import net.crowmail.util.Global;
 import net.crowmail.util.Orm;
 
@@ -16,11 +17,22 @@ import java.util.Date;
 
 public class Ledger extends Data {
     public static String tableName  = "ledger";
+    @DbField
     public Long account_id;
+
+    @DbField
     public Date date;
+
+    @DbField
     public String type;
+
+    @DbField
     public String description;
+
+    @DbField
     public Long longval;
+
+    @DbField
     public String textval;
 
     public static String ERROR_TYPE = "error";
