@@ -60,13 +60,13 @@ public class Fetcher {
 
     private Properties getProperties() {
         Properties props = System.getProperties();
-        if (a.data.imapSslType.equals("STARTTLS")) {
+        if (a.imapSslType.equals("STARTTLS")) {
             props.setProperty("mail.imap.auth", "true");
             props.setProperty("mail.imap.timeout", TIMEOUT.toString());
             props.setProperty("mail.imap.connectiontimeout", TIMEOUT.toString());
             props.setProperty("mail.imap.socketFactory.class", "net.crowmail.SSLCrowFactory");
             props.setProperty("ssl.SocketFactory.provider", "net.crowmail.SSLCrowFactory");
-            props.setProperty("mail.imap.socketFactory.port", a.data.imapPort.toString());
+            props.setProperty("mail.imap.socketFactory.port", a.imapPort.toString());
             props.setProperty("mail.imap.starttls.enable", "true");
         } else {
             props.setProperty("mail.imaps.timeout", TIMEOUT.toString());
@@ -76,14 +76,14 @@ public class Fetcher {
     }
 
     public URLName getURLName(Properties props) {
-        String protocol = a.data.imapSslType.equals("STARTTLS") ? "imap" : "imaps";
+        String protocol = a.imapSslType.equals("STARTTLS") ? "imap" : "imaps";
         return new URLName(
                 protocol,
-                a.data.imapHost,
-                a.data.imapPort,
+                a.imapHost,
+                a.imapPort,
                 "Inbox",
-                a.data.user,
-                a.data.password);
+                a.user,
+                a.password);
     }
 
     private void connect() throws MessagingException {
@@ -106,15 +106,15 @@ public class Fetcher {
 
     private Long fetchMail() throws MessagingException {
         Long uidnext = getUidNext(folder, "Inbox");
-        Integer previous = (a.data.uidnext != null && a.data.uidnext != 0) ? a.data.uidnext : 1;
+        Integer previous = (a.uidnext != null && a.uidnext != 0) ? a.uidnext : 1;
         if (previous != uidnext.intValue()) {
             Message[] msgs = folder.getMessagesByUID(previous, uidnext - 1);
             notifyUpdates(msgs);
-            a.data.uidnext = uidnext.intValue();
+            a.uidnext = uidnext.intValue();
             a.save(Global.getWriteDb(context));
             Log.d("fcrow", String.format("---- fetching %d..%d", previous, uidnext));
             new Ledger(
-                    a.data._id,
+                    a._id,
                     new Date(),
                     Ledger.MESSAGE_COUNT_TYPE,
                     String.format("messages %d..%d", previous, uidnext),
@@ -134,8 +134,8 @@ public class Fetcher {
     private void notifyUpdates(Message[] msgs) throws MessagingException {
         Log.d("fcrow", String.format("---- %d emails", msgs.length));
         String msg_group_key;
-        if (a.data._id != null) {
-            msg_group_key = String.format("%s%d", Global.CROWMAIL, a.data._id);
+        if (a._id != null) {
+            msg_group_key = String.format("%s%d", Global.CROWMAIL, a._id);
         } else {
             msg_group_key = Global.CROWMAIL;
         }
@@ -148,7 +148,7 @@ public class Fetcher {
 
     public void loop(){
         new Ledger(
-                a.data._id,
+                a._id,
                 new Date(),
                 Ledger.INFO_TYPE,
                 "fetch task created",
@@ -168,7 +168,7 @@ public class Fetcher {
                         connect();
                         uidnext = fetchMail();
                         new Ledger(
-                                _account.data._id,
+                                _account._id,
                                 new Date(),
                                 Ledger.LATEST_FETCH_TYPE,
                                 String.format("duration %d",new Date().getTime() - startDebug.getTime()),
@@ -178,10 +178,10 @@ public class Fetcher {
                     } catch (Exception e) {
                         delay *= 3;
                         new Ledger(
-                                _account.data._id,
+                                _account._id,
                                 new Date(),
                                 Ledger.NETWORK_UNREACHABLE,
-                                _account.data.imapHost,
+                                _account.imapHost,
                                 new Date().getTime() - startDebug.getTime(),
                                 Global.stackToString(e)
                         ).log(Global.getWriteDb(context), context);
@@ -190,7 +190,7 @@ public class Fetcher {
                         Thread.sleep(delay);
                     } catch (InterruptedException e) {
                         new Ledger(
-                                _account.data._id,
+                                _account._id,
                                 new Date(),
                                 Ledger.SLEEP_THREAD_INTERRUPTED,
                                 null,

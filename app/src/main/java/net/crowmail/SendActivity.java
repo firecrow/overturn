@@ -18,7 +18,6 @@ import java.util.List;
 import javax.mail.internet.InternetAddress;
 
 import net.crowmail.model.Account;
-import net.crowmail.model.AccountData;
 import net.crowmail.model.CrowMessage;
 import net.crowmail.service.Queue;
 import net.crowmail.service.Receiver;
@@ -35,7 +34,7 @@ public class SendActivity extends AppCompatActivity {
         Intent intent = getIntent();
         Long id = intent.getLongExtra("account_id", 0);
         this.a = new Account();
-        a.data = (AccountData) Orm.byId(Global.getReadDb(getApplicationContext()), Account.tableName, AccountData.class, id.intValue());
+        a = (Account) Orm.byId(Global.getReadDb(getApplicationContext()), Account.tableName, Account.class, id.intValue());
         Button sendBtn = (Button) findViewById(R.id.sendBtn);
         sendBtn.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -57,17 +56,17 @@ public class SendActivity extends AppCompatActivity {
         Log.d("fcrow", "---- in send in sendActivity");
         CrowMessage cmsg = new CrowMessage(Global.getWriteDb(getApplicationContext()));
         try {
-            cmsg.from = new InternetAddress(a.data.email);
+            cmsg.from = new InternetAddress(a.email);
             String toText = ((EditText) findViewById(R.id.sendTo)).getText().toString();
             cmsg.to = InternetAddress.parse(toText);
-            cmsg.data.subject = ((EditText) findViewById(R.id.sendSubject)).getText().toString();
-            cmsg.data.bodyText = ((EditText) findViewById(R.id.sendBody)).getText().toString();
+            cmsg.subject = ((EditText) findViewById(R.id.sendSubject)).getText().toString();
+            cmsg.bodyText = ((EditText) findViewById(R.id.sendBody)).getText().toString();
             cmsg.save();
 
             Intent queueItem = new Intent(getApplicationContext(), Queue.class);
             queueItem.setAction(Global.TRIGGER_SEND);
-            queueItem.putExtra("account_id", new Long(a.data._id).longValue());
-            queueItem.putExtra("message_id", new Long(cmsg.data._id).longValue());
+            queueItem.putExtra("account_id", new Long(a._id).longValue());
+            queueItem.putExtra("message_id", new Long(cmsg._id).longValue());
             Log.e("fcrow", "---------------------- about to send intent");
             startService(queueItem);
         } catch(Exception e) {
@@ -79,7 +78,7 @@ public class SendActivity extends AppCompatActivity {
 
     public void goToAccount() {
         Intent intent = new Intent(this, AccountActivity.class);
-        intent.putExtra("account_id", new Long(a.data._id).longValue());
+        intent.putExtra("account_id", new Long(a._id).longValue());
         startActivity(intent);
     }
 }

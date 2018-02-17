@@ -33,10 +33,10 @@ public class Mailer extends javax.mail.Authenticator {
         this.a = a;
         Properties props = new Properties();
         props.put("mail.transport.protocol", "smtp");
-        props.put("mail.host", a.data.smtpHost);
+        props.put("mail.host", a.smtpHost);
         props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.port", a.data.smtpPort.toString());
-        props.put("mail.smtp.socketFactory.port", a.data.smtpPort.toString());
+        props.put("mail.smtp.port", a.smtpPort.toString());
+        props.put("mail.smtp.socketFactory.port", a.smtpPort.toString());
         props.put("mail.smtp.socketFactory.class",
                 "javax.net.ssl.SSLSocketFactory");
         props.put("mail.smtp.socketFactory.fallback", "false");
@@ -48,12 +48,12 @@ public class Mailer extends javax.mail.Authenticator {
         try {
             MimeMessage mime = new MimeMessage(session);
             mime.setSender(msg.from);
-            mime.setSubject(msg.data.subject);
-            mime.setText(msg.data.bodyText);
+            mime.setSubject(msg.subject);
+            mime.setText(msg.bodyText);
             mime.setRecipients(Message.RecipientType.TO, msg.to);
             SMTPTransport trans = (SMTPTransport) session.getTransport("smtps");
-            Log.d("fcrow", String.format("------------ opened transport %s/%s:%s -----", a.data.smtpHost, a.data.user, a.data.smtpPort.toString()));
-            trans.connect(a.data.smtpHost, a.data.user, a.data.password);
+            Log.d("fcrow", String.format("------------ opened transport %s/%s:%s -----", a.smtpHost, a.user, a.smtpPort.toString()));
+            trans.connect(a.smtpHost, a.user, a.password);
             Log.d("fcrow", "------------ logged in transport -----");
             trans.sendMessage(mime, mime.getAllRecipients());
             Log.d("fcrow", "------------ sent in transport -----");

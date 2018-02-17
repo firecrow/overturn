@@ -7,11 +7,11 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ModelBase {
+public class ModelBase extends Data {
     public static String tableName;
     public Map<String, View> ui;
 
-    public ModelBase(){
+    public ModelBase() {
         ui = new HashMap<String, View>();
     }
 

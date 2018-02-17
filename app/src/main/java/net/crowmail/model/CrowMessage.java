@@ -12,12 +12,26 @@ import java.util.Map;
 
 import javax.mail.internet.InternetAddress;
 
+import net.crowmail.util.DbField;
 import net.crowmail.util.Orm;
 import net.crowmail.vector.EmailWithType;
 
 public class CrowMessage extends ModelBase {
     public static String tableName = "message";
-    public CrowMessageData data;
+
+    @DbField
+    public String messageId;
+    @DbField
+    public Date timestamp;
+    @DbField
+    public String subject;
+    @DbField
+    public String bodyText;
+    @DbField
+    public String bodyHtml;
+    @DbField
+    public Boolean isIncoming;
+
     public InternetAddress[] to;
     public InternetAddress[] cc;
     public InternetAddress[] bcc;
@@ -30,12 +44,10 @@ public class CrowMessage extends ModelBase {
 
     public CrowMessage(SQLiteDatabase db) {
         this.db = db;
-        this.data = new CrowMessageData();
     }
 
     public static CrowMessage byId(SQLiteDatabase db, Integer id) {
-        CrowMessage msg = new CrowMessage(db);
-        msg.data = (CrowMessageData) Orm.byId(db, CrowMessage.tableName, CrowMessageData.class, id);
+        CrowMessage msg = (CrowMessage) Orm.byId(db, CrowMessage.tableName, CrowMessage.class, id);
         msg.loadAddresses();
         return msg;
     }
@@ -46,7 +58,7 @@ public class CrowMessage extends ModelBase {
                     + "from email e join emailtomessage m2m on e._id = m2m.email_id "
                     + "join message m on m._id = m2m.message_id where m._id = ?";
             String[] cols = {"name", "email", "type"};
-            String[] args = {data._id.toString()};
+            String[] args = {_id.toString()};
             List<EmailWithType> emails = (List<EmailWithType>) Orm.byQueryRaw(db, EmailWithType.class, cols, qry, args);
             List<InternetAddress> to = new ArrayList<InternetAddress>();
             List<InternetAddress> cc = new ArrayList<InternetAddress>();
@@ -71,11 +83,7 @@ public class CrowMessage extends ModelBase {
     }
 
     public void save(){
-        if(data._id != null) {
-            Orm.update(db, tableName, data);
-        } else {
-            Orm.insert(db, tableName, data);
-        }
+        super.save(db);
         saveAddress("FROM", from);
         //saveAddress("FROM", returnPath);
         if(to != null) {
@@ -99,7 +107,7 @@ public class CrowMessage extends ModelBase {
         Long email_id = genEmailId(addr);
         EmailToMsg m2m = new EmailToMsg();
         m2m.email_id = email_id;
-        m2m.message_id = this.data._id;
+        m2m.message_id = this._id;
         m2m.type = type;
         Orm.insert(db, EmailToMsg.tableName, m2m);
     }

@@ -13,7 +13,6 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import net.crowmail.model.Account;
-import net.crowmail.model.AccountData;
 import net.crowmail.service.Queue;
 import net.crowmail.util.Global;
 import net.crowmail.util.Orm;
@@ -32,12 +31,11 @@ public class AccountActivity extends AppCompatActivity {
         if (id == 0) {
             this.a = new Account();
         } else {
-            this.a = new Account();
-            a.data = (AccountData) Orm.byId(Global.getWriteDb(getApplicationContext()), Account.tableName, AccountData.class, id.intValue());
-            Log.d("fcrow", String.format("------------_id:%d imapHost:%s", a.data._id, a.data.imapHost));
+            this.a = (Account) Orm.byId(Global.getWriteDb(getApplicationContext()), Account.tableName, Account.class, id.intValue());
+            Log.d("fcrow", String.format("------------_id:%d imapHost:%s", a._id, a.imapHost));
         }
         setUpUI();
-        Orm.fillUI(a.data, a.ui);
+        Orm.fillUI(a, a.ui);
         Button btn = (Button)findViewById(R.id.accountDone);
         TextView blink = (TextView)findViewById(R.id.backLink);
         TextView slink = (TextView)findViewById(R.id.sendLink);
@@ -50,21 +48,21 @@ public class AccountActivity extends AppCompatActivity {
         };
         View.OnClickListener send = new View.OnClickListener() {
             public void onClick(View v) {
-                goToSend(a.data._id);
+                goToSend(a._id);
             }
         };
         View.OnClickListener fetch = new View.OnClickListener() {
             public void onClick(View v) {
                 Intent fetchItem = new Intent(getApplicationContext(), Queue.class);
                 fetchItem.setAction(Global.TRIGGER_FETCH);
-                fetchItem.putExtra("account_id", new Long(a.data._id).longValue());
+                fetchItem.putExtra("account_id", new Long(a._id).longValue());
                 Log.e("fcrow", "---------------------- about to fetch intent");
                 startService(fetchItem);
             }
         };
         View.OnClickListener ledger = new View.OnClickListener() {
             public void onClick(View v) {
-                goToLedger(new Long(a.data._id));
+                goToLedger(new Long(a._id));
             }
         };
         btn.setOnClickListener(back);
@@ -105,15 +103,11 @@ public class AccountActivity extends AppCompatActivity {
     }
 
     public void save() {
-        Log.d("fcrow", String.format("-----in save: _id:%d imapHost:%s", a.data._id, a.data.imapHost));
+        Log.d("fcrow", String.format("-----in save: _id:%d imapHost:%s", a._id, a.imapHost));
         SQLiteDatabase db = Global.getWriteDb(getApplicationContext());
-        Orm.backfillFromUI(a.data, a.ui);
-        Log.d("fcrow", String.format("-----in save after: _id:%d imapHost:%s", a.data._id, a.data.imapHost));
-        if(a.data._id != null) {
-            Orm.update(db, Account.tableName, a.data);
-        } else {
-            Orm.insert(db, Account.tableName, a.data);
-        }
+        Orm.backfillFromUI(a, a.ui);
+        Log.d("fcrow", String.format("-----in save after: _id:%d imapHost:%s", a._id, a.imapHost));
+        a.save(db);
     }
 
     public void goToMain() {
