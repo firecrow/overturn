@@ -7,9 +7,7 @@ import android.util.Log;
 
 import net.crowmail.util.Orm;
 import net.crowmail.model.Account;
-import net.crowmail.model.AccountData;
 import net.crowmail.model.CrowMessage;
-import net.crowmail.model.CrowMessageData;
 import net.crowmail.model.Email;
 import net.crowmail.model.EmailToMsg;
 import net.crowmail.model.Ledger;
@@ -23,8 +21,8 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     public void onCreate(SQLiteDatabase db) {
-        db.execSQL(Orm.getCreateTable(Account.tableName, AccountData.class));
-        db.execSQL(Orm.getCreateTable(CrowMessage.tableName, CrowMessageData.class));
+        db.execSQL(Orm.getCreateTable(Account.tableName, Account.class));
+        db.execSQL(Orm.getCreateTable(CrowMessage.tableName, CrowMessage.class));
         db.execSQL(Orm.getCreateTable(Email.tableName, Email.class));
         db.execSQL(Orm.getCreateTable(EmailToMsg.tableName, EmailToMsg.class));
         db.execSQL(Orm.getCreateTable(Ledger.tableName, Ledger.class));

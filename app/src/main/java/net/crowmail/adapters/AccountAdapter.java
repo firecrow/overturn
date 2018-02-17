@@ -11,14 +11,14 @@ import android.widget.TextView;
 import java.util.List;
 
 import net.crowmail.R;
-import net.crowmail.model.AccountData;
+import net.crowmail.model.Account;
 
-public class AccountAdapter extends ArrayAdapter<AccountData> {
+public class AccountAdapter extends ArrayAdapter<Account> {
     Context context;
     int layoutId;
-    List<AccountData> adarray;
+    List<Account> adarray;
 
-    public AccountAdapter(Context context, int layoutId, List<AccountData> adarray) {
+    public AccountAdapter(Context context, int layoutId, List<Account> adarray) {
         super(context, layoutId, adarray);
         this.context = context;
         this.layoutId = layoutId;

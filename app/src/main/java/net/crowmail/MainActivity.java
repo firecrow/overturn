@@ -17,7 +17,6 @@ import java.util.List;
 import net.crowmail.adapters.AccountAdapter;
 import net.crowmail.model.Data;
 import net.crowmail.model.Account;
-import net.crowmail.model.AccountData;
 import net.crowmail.service.Queue;
 import net.crowmail.util.Global;
 import net.crowmail.util.Orm;
@@ -57,8 +56,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onResume(){
         super.onResume();
-        List<AccountData> addata = (List<AccountData>) Orm.byQuery(Global.getReadDb(getApplicationContext()),
-                Account.tableName, AccountData.class, null, null, null, null);
+        List<Account> addata = (List<Account>) Orm.byQuery(Global.getReadDb(getApplicationContext()),
+                Account.tableName, Account.class, null, null, null, null);
 
         lview = (ListView) findViewById(R.id.accountList);
         AccountAdapter adapter = (AccountAdapter)lview.getAdapter();

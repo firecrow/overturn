@@ -12,7 +12,6 @@ import java.util.List;
 
 import net.crowmail.R;
 import net.crowmail.model.Account;
-import net.crowmail.model.AccountData;
 import net.crowmail.model.Ledger;
 
 public class LedgerAdapter extends ArrayAdapter<Ledger> {
