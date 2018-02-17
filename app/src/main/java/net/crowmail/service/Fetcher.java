@@ -20,6 +20,7 @@ import com.sun.mail.imap.protocol.IMAPProtocol;
 import com.sun.mail.imap.protocol.Status;
 
 
+import java.net.ConnectException;
 import java.util.Date;
 import java.util.Properties;
 
@@ -86,7 +87,10 @@ public class Fetcher {
                 a.password);
     }
 
-    private void connect() throws MessagingException {
+    private void connect() throws MessagingException, ConnectException {
+        if(!Global.hasNetwork(context)){
+            throw new ConnectException();
+        }
         session = Session.getInstance(props);
         store = session.getStore(url);
         store.connect();
@@ -96,8 +100,7 @@ public class Fetcher {
 
     private Long getUidNext(IMAPFolder folder, final String folderName) throws MessagingException {
         return (Long) folder.doCommand(new IMAPFolder.ProtocolCommand() {
-            public Object doCommand(IMAPProtocol p)
-            throws ProtocolException {
+            public Object doCommand(IMAPProtocol p) throws ProtocolException {
                Status status = p.status(folderName, new String[]{"uidnext"});
                return status.uidnext;
             }
@@ -140,7 +143,8 @@ public class Fetcher {
         for (int i = 0; i < msgs.length; i++) {
             String from = msgs[i].getFrom()[0].toString();
             String subject = msgs[i].getSubject();
-            new CrowNotification(context).send(from, subject, msg_group_key, R.drawable.notif, false);
+            new CrowNotification(context).send(
+                    from, subject, msg_group_key, R.drawable.notif, false);
         }
     }
 
@@ -169,7 +173,8 @@ public class Fetcher {
                                 _account._id,
                                 new Date(),
                                 Ledger.LATEST_FETCH_TYPE,
-                                String.format("duration %d",new Date().getTime() - startDebug.getTime()),
+                                String.format("duration %d",
+                                        new Date().getTime() - startDebug.getTime()),
                                 uidnext,
                                 null
                         ).log(Global.getWriteDb(context), context);

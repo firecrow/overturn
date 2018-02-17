@@ -76,7 +76,7 @@ public class LedgerActivity extends AppCompatActivity {
                 null,
                 null,
                 "date desc",
-                100);
+                300);
 
         LedgerAdapter adapter = (LedgerAdapter)lview.getAdapter();
 

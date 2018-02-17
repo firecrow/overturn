@@ -1,12 +1,20 @@
 package net.crowmail.service;
 
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.net.NetworkInfo;
+import android.net.NetworkRequest;
 import android.os.IBinder;
 import android.util.Log;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import net.crowmail.model.Account;
@@ -17,10 +25,18 @@ import net.crowmail.util.Global;
 public class Queue extends Service {
 
     Map<Integer, Account> recieving;
+    LocalNetwork localNetwork;
 
     @Override
     public void onCreate() {
         recieving = new HashMap<Integer, Account>();
+
+        NetworkRequest req = new NetworkRequest.Builder()
+                .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+                .build();
+        localNetwork = new LocalNetwork(getApplicationContext());
+        Global.getCm(getApplicationContext()).registerNetworkCallback(req, localNetwork);
 
         new Ledger(
                 null,
@@ -81,7 +97,44 @@ public class Queue extends Service {
                 null,
                 null)
         .log(Global.getWriteDb(getApplicationContext()), getApplicationContext());
+        Global.getCm(getApplicationContext()).unregisterNetworkCallback(localNetwork);
         stopSelf();
     }
 
+    public class LocalNetwork extends ConnectivityManager.NetworkCallback {
+
+        Context context;
+        ConnectivityManager cm;
+        Map<String, Boolean> networks;
+
+        public LocalNetwork(Context context) {
+            this.context = context;
+            this.networks = new HashMap<String, Boolean>();
+        }
+
+        @Override
+        public void onAvailable(Network network){
+            NetworkInfo info = Global.getCm(context).getNetworkInfo(network);
+            networks.put(info.getTypeName(), true);
+            logConnected();
+        }
+
+        @Override
+        public void onLost(Network network){
+            NetworkInfo info = Global.getCm(context).getNetworkInfo(network);
+            networks.remove(info.getTypeName());
+            logConnected();
+        }
+
+        public void logConnected() {
+            new Ledger(
+                    null,
+                    new Date(),
+                    Ledger.NETWORK_STATUS_TYPE,
+                    String.format("cb net %s", networks.keySet().toString()),
+                    null,
+                    null
+            ).log(Global.getWriteDb(context), context);
+        }
+    }
 }
