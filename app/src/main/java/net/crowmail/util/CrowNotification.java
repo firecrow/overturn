@@ -25,7 +25,6 @@ public class CrowNotification {
     }
 
     public void send(String title, String content, String group, Integer iconId, boolean vibrate) {
-        Log.d("fcrow", "--- sending notification");
         NotificationManagerCompat nmng = NotificationManagerCompat.from(context);
         Notification sum = new Notification.Builder(context)
                 .setContentTitle(group)

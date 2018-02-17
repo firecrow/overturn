@@ -45,8 +45,8 @@ public class Account extends ModelBase {
         super();
     }
 
-    public static Account byId(SQLiteDatabase db, Integer id){
-        Account a = (Account) Orm.byId(db, Account.tableName, Account.class, id.intValue());
+    public static Account byId(SQLiteDatabase db, Long id){
+        Account a = (Account) Orm.byId(db, Account.tableName, Account.class, id);
         return a;
     }
 

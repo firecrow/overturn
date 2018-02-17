@@ -44,16 +44,17 @@ public class Queue extends Service {
 
         if (intent != null && !intent.getAction().equals(Global.START_SERVICE)) {
             Long account_id = intent.getLongExtra("account_id", 0);
-            final Account a = Account.byId(Global.getReadDb(getApplicationContext()), account_id.intValue());
+            final Account a = Account.byId(Global.getReadDb(getApplicationContext()),
+                    account_id);
 
             Long message_id;
             CrowMessage msg;
             if(intent.hasExtra("message_id")) {
                 message_id = intent.getLongExtra("message_id", 0);
-                msg = CrowMessage.byId(Global.getReadDb(getApplicationContext()), message_id.intValue());
+                msg = CrowMessage.byId(Global.getReadDb(getApplicationContext()),
+                        message_id);
             }
 
-            Log.d("fcrow", String.format("--------------- ACTION: %s", intent.getAction()));
             if (intent.getAction().equals(Global.TRIGGER_SEND)) {
                 // Mailer m = new Mailer(a);
             } else if (intent.getAction().equals(Global.TRIGGER_FETCH)) {

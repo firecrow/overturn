@@ -112,7 +112,6 @@ public class Fetcher {
             notifyUpdates(msgs);
             a.uidnext = uidnext.intValue();
             a.save(Global.getWriteDb(context));
-            Log.d("fcrow", String.format("---- fetching %d..%d", previous, uidnext));
             new Ledger(
                     a._id,
                     new Date(),
@@ -132,7 +131,6 @@ public class Fetcher {
     }
 
     private void notifyUpdates(Message[] msgs) throws MessagingException {
-        Log.d("fcrow", String.format("---- %d emails", msgs.length));
         String msg_group_key;
         if (a._id != null) {
             msg_group_key = String.format("%s%d", Global.CROWMAIL, a._id);

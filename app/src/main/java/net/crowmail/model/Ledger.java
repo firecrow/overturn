@@ -1,9 +1,6 @@
 package net.crowmail.model;
 
-import net.crowmail.R;
-import net.crowmail.util.CrowNotification;
 import net.crowmail.util.DbField;
-import net.crowmail.util.Global;
 import net.crowmail.util.Orm;
 
 import android.content.Context;
