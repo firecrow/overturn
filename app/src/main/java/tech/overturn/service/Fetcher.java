@@ -109,7 +109,8 @@ public class Fetcher {
                     String.format("messages %d..%d", previous, uidnext),
                     Long.valueOf(msgs.length),
                     null
-            ).log(Global.getWriteDb(context), context);
+            ).update(Global.getWriteDb(context), context,
+                    Ledger.MESSAGE_COUNT_TYPE, Account.tableName, a._id);
         }
         if(state.folder != null && state.folder.isOpen()) {
             state.folder.close(false);
@@ -140,27 +141,29 @@ public class Fetcher {
                 a._id,
                 Account.tableName,
                 new Date(),
-                Ledger.INFO_TYPE,
+                Ledger.FETCH_TASK_CREATED,
                 "fetch task created",
                 null,
                 null
-        ).log(Global.getWriteDb(context), context);
+        ).update(Global.getWriteDb(context), context,
+                Ledger.FETCH_TASK_CREATED, Account.tableName, a._id);
         final Fetcher self = this;
         final Runnable runnable = new Runnable() {
             final Account _account = a;
             @Override
             public void run() {
                 while (true) {
-                    if(!Account.isRunningById(context, _account._id)){
+                    if(!Account.runStateForId(context, _account._id).equals(Ledger.RUNNING)){
                         new Ledger(
                                 _account._id,
                                 Account.tableName,
                                 new Date(),
-                                Ledger.INFO_TYPE,
-                                "stop flag detected",
+                                Ledger.ACCOUNT_RUNNING_STATUS,
+                                Ledger.STOPED,
                                 null,
                                 null
-                        ).log(Global.getWriteDb(context), context);
+                        ).update(Global.getWriteDb(context), context,
+                            Ledger.ACCOUNT_RUNNING_STATUS, Account.tableName, _account._id);
                         break;
                     }
                     Long delay = Fetcher.FETCH_DELAY;
@@ -179,7 +182,8 @@ public class Fetcher {
                                         new Date().getTime() - startDebug.getTime()),
                                 uidnext,
                                 null
-                        ).log(Global.getWriteDb(context), context);
+                        ).update(Global.getWriteDb(context), context,
+                                Ledger.UID_NEXT, Account.tableName, _account._id);
                     } catch (ConnectException e) {
                         delay *= 5;
                         exceptType = Ledger.NETWORK_UNREACHABLE;
@@ -190,14 +194,7 @@ public class Fetcher {
                         exc = e;
                     }
 
-                    try {
-                        Thread.sleep(delay);
-                    } catch (InterruptedException e) {
-                        exceptType = Ledger.SLEEP_THREAD_INTERRUPTED;
-                        exc = e;
-                    }
-
-                    if(exc != null) {
+                    if (exc != null) {
                         new Ledger(
                                 _account._id,
                                 Account.tableName,
@@ -206,6 +203,21 @@ public class Fetcher {
                                 _account.imapHost,
                                 new Date().getTime() - startDebug.getTime(),
                                 Global.stackToString(exc)
+                        ).update(Global.getWriteDb(context), context,
+                                exceptType, Account.tableName, _account._id);
+                    }
+
+                    try {
+                        Thread.sleep(delay);
+                    } catch (InterruptedException e) {
+                        new Ledger(
+                                _account._id,
+                                Account.tableName,
+                                new Date(),
+                                Ledger.SLEEP_THREAD_INTERRUPTED,
+                                _account.imapHost,
+                                new Date().getTime() - startDebug.getTime(),
+                                Global.stackToString(e)
                         ).log(Global.getWriteDb(context), context);
                     }
 

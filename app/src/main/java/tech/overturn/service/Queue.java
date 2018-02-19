@@ -24,11 +24,8 @@ import tech.overturn.util.Global;
 
 public class Queue extends Service {
 
-    Map<Long, Account> receiving;
-
     @Override
     public void onCreate() {
-        receiving = new HashMap<Long, Account>();
 
         NetworkRequest req = new NetworkRequest.Builder()
                 .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
@@ -44,7 +41,7 @@ public class Queue extends Service {
                 null,
                 null)
         .log(Global.getWriteDb(getApplicationContext()), getApplicationContext());
-        runLoops();
+        runLoops(true);
     }
 
     @Override
@@ -63,26 +60,24 @@ public class Queue extends Service {
                 new Ledger(id, Account.tableName, new Date(), Ledger.ACCOUNT_RUNNING_STATUS,
                         Ledger.RUNNING, null, null
                 ).log(Global.getWriteDb(getApplicationContext()), getApplicationContext());
-                runLoops();
+                runLoops(false);
             }
             if (intent.getAction().equals(Global.TRIGGER_STOP)) {
                 Long id = intent.getLongExtra("account_id", -1L);
                 new Ledger(id, Account.tableName, new Date(), Ledger.ACCOUNT_RUNNING_STATUS,
-                        Ledger.STOPED, null, null
+                        Ledger.STOPING, null, null
                 ).log(Global.getWriteDb(getApplicationContext()), getApplicationContext());
-                receiving.remove(id);
             }
         };
 
         return Service.START_STICKY;
     }
 
-    private void runLoops() {
+    private void runLoops(Boolean initial) {
         List<Long> ids = Account.allIds(getApplicationContext());
         for(Long id: ids) {
-            if (!receiving.containsKey(id)) {
+            if (initial || Account.runStateForId(getApplicationContext(), id).equals(Ledger.STOPED)) {
                 Account account = Account.byId(Global.getReadDb(getApplicationContext()), id);
-                receiving.put(id, account);
                 new Fetcher(getApplicationContext(), account).loop();
             }
         }

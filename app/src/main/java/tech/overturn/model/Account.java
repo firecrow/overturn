@@ -55,16 +55,6 @@ public class Account extends ModelBase {
         return a;
     }
 
-    public static List<Long> allRunningIds(Context context) {
-        List<Long> running = new ArrayList<Long>();
-        for (Long id: allIds(context)) {
-            if(isRunningById(context, id)){
-                running.add(id);
-            }
-        }
-        return running;
-    }
-
     public static List<Long> allIds(Context context) {
         List<Long> ids =  new ArrayList<Long>();
         List<Id> _ids = (List<Id>) Orm.byQuery(Global.getWriteDb(context),
@@ -80,7 +70,7 @@ public class Account extends ModelBase {
         return ids;
     }
 
-    public static Boolean isRunningById(Context context, Long id) {
+    public static String runStateForId(Context context, Long id) {
         List<Ledger> ldata = (List<Ledger>) Orm.byQuery(Global.getWriteDb(context),
                 Ledger.tableName,
                 Ledger.class,
@@ -88,6 +78,10 @@ public class Account extends ModelBase {
                 new String[]{Ledger.ACCOUNT_RUNNING_STATUS, Account.tableName, id.toString()},
                 "date desc",
                 1);
-        return ldata.size() > 0 && ldata.get(0).textval.equals(Ledger.RUNNING);
+        if (ldata.size() == 0) {
+            return Ledger.STOPED;
+        } else {
+            return ldata.get(0).textval;
+        }
     }
 }
