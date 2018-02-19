@@ -59,15 +59,17 @@ public class Queue extends Service {
 
         if (intent != null) {
             if (intent.getAction().equals(Global.TRIGGER_FETCH)) {
-                Long id = intent.getLongExtra("account_id", 0);
+                Long id = intent.getLongExtra("account_id", -1L);
                 new Ledger(id, Account.tableName, new Date(), Ledger.ACCOUNT_RUNNING_STATUS,
-                        Ledger.RUNNING, null, null);
+                        Ledger.RUNNING, null, null
+                ).log(Global.getWriteDb(getApplicationContext()), getApplicationContext());
                 runLoops();
             }
             if (intent.getAction().equals(Global.TRIGGER_STOP)) {
-                Long id = intent.getLongExtra("account_id", 0);
+                Long id = intent.getLongExtra("account_id", -1L);
                 new Ledger(id, Account.tableName, new Date(), Ledger.ACCOUNT_RUNNING_STATUS,
-                        Ledger.STOPED, null, null);
+                        Ledger.STOPED, null, null
+                ).log(Global.getWriteDb(getApplicationContext()), getApplicationContext());
                 receiving.remove(id);
             }
         };
@@ -78,7 +80,7 @@ public class Queue extends Service {
     private void runLoops() {
         List<Long> ids = Account.allIds(getApplicationContext());
         for(Long id: ids) {
-            if (receiving.get(id) == null) {
+            if (!receiving.containsKey(id)) {
                 Account account = Account.byId(Global.getReadDb(getApplicationContext()), id);
                 receiving.put(id, account);
                 new Fetcher(getApplicationContext(), account).loop();

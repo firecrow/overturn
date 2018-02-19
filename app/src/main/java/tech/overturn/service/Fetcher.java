@@ -131,7 +131,7 @@ public class Fetcher {
             String from = msgs[i].getFrom()[0].toString();
             String subject = msgs[i].getSubject();
             new CrowNotification(context).send(
-                    from, subject, msg_group_key, R.drawable.overturn_white, false);
+                    from, subject, msg_group_key, R.drawable.overturn_notif, false);
         }
     }
 
@@ -152,6 +152,15 @@ public class Fetcher {
             public void run() {
                 while (true) {
                     if(!Account.isRunningById(context, _account._id)){
+                        new Ledger(
+                                _account._id,
+                                Account.tableName,
+                                new Date(),
+                                Ledger.INFO_TYPE,
+                                "stop flag detected",
+                                null,
+                                null
+                        ).log(Global.getWriteDb(context), context);
                         break;
                     }
                     Long delay = Fetcher.FETCH_DELAY;
@@ -200,7 +209,7 @@ public class Fetcher {
                         ).log(Global.getWriteDb(context), context);
                     }
 
-                    if(exceptType.equals(Ledger.SLEEP_THREAD_INTERRUPTED)) {
+                    if(exceptType != null && exceptType.equals(Ledger.SLEEP_THREAD_INTERRUPTED)) {
                         break;
                     }
                 }

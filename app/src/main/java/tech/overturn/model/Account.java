@@ -88,6 +88,6 @@ public class Account extends ModelBase {
                 new String[]{Ledger.ACCOUNT_RUNNING_STATUS, Account.tableName, id.toString()},
                 "date desc",
                 1);
-        return ldata.get(0).textval.equals(Ledger.RUNNING);
+        return ldata.size() > 0 && ldata.get(0).textval.equals(Ledger.RUNNING);
     }
 }

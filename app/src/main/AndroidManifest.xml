@@ -12,16 +12,19 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity">
+        <activity android:name=".MainActivity"
+            android:theme="@style/naked">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".AccountActivity" />
-        <activity android:name=".SendActivity" />
-        <activity android:name=".LedgerActivity"/>
-        <activity android:name=".LedgerDetailActivity"/>
+        <activity android:name=".AccountActivity"
+            android:theme="@style/naked" />
+        <activity android:name=".LedgerActivity"
+            android:theme="@style/naked" />
+        <activity android:name=".LedgerDetailActivity"
+            android:theme="@style/naked" />
         <service
             android:name=".service.Queue"
             android:enabled="true"

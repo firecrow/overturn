@@ -47,6 +47,7 @@ public class AccountActivity extends AppCompatActivity {
         View.OnClickListener stop = new View.OnClickListener() {
             public void onClick(View v) {
                 Intent stopItem = new Intent(getApplicationContext(), Queue.class);
+                stopItem.putExtra("account_id", a._id);
                 stopItem.setAction(Global.TRIGGER_STOP);
                 startService(stopItem);
             }
@@ -54,6 +55,7 @@ public class AccountActivity extends AppCompatActivity {
         View.OnClickListener fetch = new View.OnClickListener() {
             public void onClick(View v) {
                 Intent fetchItem = new Intent(getApplicationContext(), Queue.class);
+                fetchItem.putExtra("account_id", a._id);
                 fetchItem.setAction(Global.TRIGGER_FETCH);
                 startService(fetchItem);
             }
