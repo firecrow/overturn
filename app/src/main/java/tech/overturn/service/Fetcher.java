@@ -131,7 +131,7 @@ public class Fetcher {
             String from = msgs[i].getFrom()[0].toString();
             String subject = msgs[i].getSubject();
             new CrowNotification(context).send(
-                    from, subject, msg_group_key, R.drawable.notif, false);
+                    from, subject, msg_group_key, R.drawable.overturn_white, false);
         }
     }
 

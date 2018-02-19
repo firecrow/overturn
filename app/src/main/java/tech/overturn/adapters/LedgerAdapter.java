@@ -11,7 +11,6 @@ import android.widget.TextView;
 import java.util.List;
 
 import tech.overturn.R;
-import tech.overturn.model.Account;
 import tech.overturn.model.Ledger;
 
 public class LedgerAdapter extends ArrayAdapter<Ledger> {
