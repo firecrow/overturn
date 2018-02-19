@@ -7,6 +7,7 @@ import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.util.Log;
 
 import java.io.PrintWriter;
@@ -25,6 +26,7 @@ public class Global {
     public static final String SEND_ACTION = "net.crowmail.SEND_ACTION";
     public static final String SEND_STATUS = "net.crowmail.SEND_STATUS";
     public static final String TRIGGER_FETCH = "net.crowmail.TRIGGER_FETCH";
+    public static final String TRIGGER_STOP = "net.crowmail.TRIGGER_STOP";
     public static final String COMPLETE = "complete";
     public static final String GLOBAL_BROADCAST = "net.crowmail.GLOBAL_BROADCAST";
     public static final String START_SERVICE = "net.crowmail.START_SERVICE";
@@ -32,6 +34,7 @@ public class Global {
 
     public static DBHelper dbh;
     public static ConnectivityManager cm;
+    public static PowerManager.WakeLock wake;
 
 
     private static DBHelper getDbh(Context context) {
@@ -57,19 +60,9 @@ public class Global {
 
     public static Boolean hasNetwork(Context context) {
         Boolean up = false;
-        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        Network[] networks = cm.getAllNetworks();
+        Network[] networks = getCm(context).getAllNetworks();
         for (Network n: networks) {
             NetworkInfo info = cm.getNetworkInfo(n);
-            new Ledger(
-                    null,
-                    new Date(),
-                    Ledger.NETWORK_STATUS_TYPE,
-                    String.format("newtwork %s is %s",
-                                info.getTypeName(), (info != null && info.isConnected()) ? "up" : "down"),
-                    null,
-                    null
-            ).log(Global.getWriteDb(context), context);
             if(info != null && info.isConnected()){
                 up = true;
             }
@@ -83,5 +76,4 @@ public class Global {
         }
         return cm;
     }
-
 }

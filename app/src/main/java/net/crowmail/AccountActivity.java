@@ -9,9 +9,12 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import net.crowmail.model.Account;
+import net.crowmail.model.Ledger;
 import net.crowmail.service.Queue;
 import net.crowmail.util.Global;
 import net.crowmail.util.Orm;
+
+import java.util.Date;
 
 public class AccountActivity extends AppCompatActivity {
 
@@ -33,7 +36,7 @@ public class AccountActivity extends AppCompatActivity {
         Orm.fillUI(a, a.ui);
         Button btn = (Button)findViewById(R.id.accountDone);
         TextView blink = (TextView)findViewById(R.id.backLink);
-        TextView slink = (TextView)findViewById(R.id.sendLink);
+        TextView slink = (TextView)findViewById(R.id.stopLink);
         TextView flink = (TextView)findViewById(R.id.fetchLink);
         TextView llink = (TextView)findViewById(R.id.ledgerLink);
         View.OnClickListener back = new View.OnClickListener() {
@@ -41,16 +44,17 @@ public class AccountActivity extends AppCompatActivity {
                 goToMain();
             }
         };
-        View.OnClickListener send = new View.OnClickListener() {
+        View.OnClickListener stop = new View.OnClickListener() {
             public void onClick(View v) {
-                goToSend(a._id);
+                Intent stopItem = new Intent(getApplicationContext(), Queue.class);
+                stopItem.setAction(Global.TRIGGER_STOP);
+                startService(stopItem);
             }
         };
         View.OnClickListener fetch = new View.OnClickListener() {
             public void onClick(View v) {
                 Intent fetchItem = new Intent(getApplicationContext(), Queue.class);
                 fetchItem.setAction(Global.TRIGGER_FETCH);
-                fetchItem.putExtra("account_id", a._id);
                 startService(fetchItem);
             }
         };
@@ -61,7 +65,7 @@ public class AccountActivity extends AppCompatActivity {
         };
         btn.setOnClickListener(back);
         blink.setOnClickListener(back);
-        slink.setOnClickListener(send);
+        slink.setOnClickListener(stop);
         flink.setOnClickListener(fetch);
         llink.setOnClickListener(ledger);
     }
@@ -102,12 +106,6 @@ public class AccountActivity extends AppCompatActivity {
 
     public void goToLedger(Long id) {
         Intent intent = new Intent(this, LedgerActivity.class);
-        intent.putExtra("account_id", id);
-        startActivity(intent);
-    }
-
-    public void goToSend(long id) {
-        Intent intent = new Intent(this, SendActivity.class);
         intent.putExtra("account_id", id);
         startActivity(intent);
     }

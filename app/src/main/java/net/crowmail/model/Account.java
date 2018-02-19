@@ -1,9 +1,14 @@
 package net.crowmail.model;
 
+import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 
 import net.crowmail.util.DbField;
+import net.crowmail.util.Global;
 import net.crowmail.util.Orm;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Account extends ModelBase {
     public static String tableName = "account";
@@ -50,4 +55,39 @@ public class Account extends ModelBase {
         return a;
     }
 
+    public static List<Long> allRunningIds(Context context) {
+        List<Long> running = new ArrayList<Long>();
+        for (Long id: allIds(context)) {
+            if(isRunningById(context, id)){
+                running.add(id);
+            }
+        }
+        return running;
+    }
+
+    public static List<Long> allIds(Context context) {
+        List<Long> ids =  new ArrayList<Long>();
+        List<Id> _ids = (List<Id>) Orm.byQuery(Global.getWriteDb(context),
+                Account.tableName,
+                Id.class,
+                null,
+                null,
+                null,
+                null);
+        for(Id id: _ids) {
+            ids.add(id._id);
+        }
+        return ids;
+    }
+
+    public static Boolean isRunningById(Context context, Long id) {
+        List<Ledger> ldata = (List<Ledger>) Orm.byQuery(Global.getWriteDb(context),
+                Ledger.tableName,
+                Ledger.class,
+                String.format("type = ? AND entity = ? AND parent_id = ?"),
+                new String[]{Ledger.ACCOUNT_RUNNING_STATUS, Account.tableName, id.toString()},
+                "date desc",
+                1);
+        return ldata.get(0).textval.equals(Ledger.RUNNING);
+    }
 }

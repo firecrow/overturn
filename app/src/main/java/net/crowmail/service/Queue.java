@@ -24,21 +24,19 @@ import net.crowmail.util.Global;
 
 public class Queue extends Service {
 
-    Map<Integer, Account> recieving;
-    LocalNetwork localNetwork;
+    Map<Long, Account> receiving;
 
     @Override
     public void onCreate() {
-        recieving = new HashMap<Integer, Account>();
+        receiving = new HashMap<Long, Account>();
 
         NetworkRequest req = new NetworkRequest.Builder()
                 .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
                 .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
                 .build();
-        localNetwork = new LocalNetwork(getApplicationContext());
-        Global.getCm(getApplicationContext()).registerNetworkCallback(req, localNetwork);
 
         new Ledger(
+                null,
                 null,
                 new Date(),
                 Ledger.INFO_TYPE,
@@ -46,6 +44,7 @@ public class Queue extends Service {
                 null,
                 null)
         .log(Global.getWriteDb(getApplicationContext()), getApplicationContext());
+        runLoops();
     }
 
     @Override
@@ -58,31 +57,33 @@ public class Queue extends Service {
         super.onStartCommand(intent, flags, startId);
         final Service self = this;
 
-        if (intent != null && !intent.getAction().equals(Global.START_SERVICE)) {
-            Long account_id = intent.getLongExtra("account_id", 0);
-            final Account a = Account.byId(Global.getReadDb(getApplicationContext()),
-                    account_id);
-
-            Long message_id;
-            CrowMessage msg;
-            if(intent.hasExtra("message_id")) {
-                message_id = intent.getLongExtra("message_id", 0);
-                msg = CrowMessage.byId(Global.getReadDb(getApplicationContext()),
-                        message_id);
+        if (intent != null) {
+            if (intent.getAction().equals(Global.TRIGGER_FETCH)) {
+                Long id = intent.getLongExtra("account_id", 0);
+                new Ledger(id, Account.tableName, new Date(), Ledger.ACCOUNT_RUNNING_STATUS,
+                        Ledger.RUNNING, null, null);
+                runLoops();
             }
-
-            if (intent.getAction().equals(Global.TRIGGER_SEND)) {
-                // Mailer m = new Mailer(a);
-            } else if (intent.getAction().equals(Global.TRIGGER_FETCH)) {
-                if(recieving.get(account_id.intValue()) != null) {
-                    Log.d("fcrow", String.format("--------------- already recieving"));
-                } else {
-                    new Fetcher(getApplicationContext(), a).loop();
-                }
+            if (intent.getAction().equals(Global.TRIGGER_STOP)) {
+                Long id = intent.getLongExtra("account_id", 0);
+                new Ledger(id, Account.tableName, new Date(), Ledger.ACCOUNT_RUNNING_STATUS,
+                        Ledger.STOPED, null, null);
+                receiving.remove(id);
             }
         };
 
         return Service.START_STICKY;
+    }
+
+    private void runLoops() {
+        List<Long> ids = Account.allIds(getApplicationContext());
+        for(Long id: ids) {
+            if (receiving.get(id) == null) {
+                Account account = Account.byId(Global.getReadDb(getApplicationContext()), id);
+                receiving.put(id, account);
+                new Fetcher(getApplicationContext(), account).loop();
+            }
+        }
     }
 
     @Override
@@ -91,50 +92,13 @@ public class Queue extends Service {
         Log.d("fcrow", "---------- service destroyed");
         new Ledger(
                 null,
+                null,
                 new Date(),
                 Ledger.INFO_TYPE,
                 "service destroyed",
                 null,
                 null)
         .log(Global.getWriteDb(getApplicationContext()), getApplicationContext());
-        Global.getCm(getApplicationContext()).unregisterNetworkCallback(localNetwork);
         stopSelf();
-    }
-
-    public class LocalNetwork extends ConnectivityManager.NetworkCallback {
-
-        Context context;
-        ConnectivityManager cm;
-        Map<String, Boolean> networks;
-
-        public LocalNetwork(Context context) {
-            this.context = context;
-            this.networks = new HashMap<String, Boolean>();
-        }
-
-        @Override
-        public void onAvailable(Network network){
-            NetworkInfo info = Global.getCm(context).getNetworkInfo(network);
-            networks.put(info.getTypeName(), true);
-            logConnected();
-        }
-
-        @Override
-        public void onLost(Network network){
-            NetworkInfo info = Global.getCm(context).getNetworkInfo(network);
-            networks.remove(info.getTypeName());
-            logConnected();
-        }
-
-        public void logConnected() {
-            new Ledger(
-                    null,
-                    new Date(),
-                    Ledger.NETWORK_STATUS_TYPE,
-                    String.format("cb net %s", networks.keySet().toString()),
-                    null,
-                    null
-            ).log(Global.getWriteDb(context), context);
-        }
     }
 }

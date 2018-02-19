@@ -1,19 +1,7 @@
 package net.crowmail.service;
 
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationChannelGroup;
-import android.app.NotificationManager;
-import android.app.TaskStackBuilder;
 import android.content.Context;
-import android.os.Handler;
-import android.support.v7.app.NotificationCompat;
-import android.support.v4.app.NotificationManagerCompat;
-import android.util.Log;
-import android.view.InputQueue;
-import android.widget.Toast;
 
-import com.sun.mail.iap.ConnectionException;
 import com.sun.mail.iap.ProtocolException;
 import com.sun.mail.imap.IMAPFolder;
 import com.sun.mail.imap.protocol.IMAPProtocol;
@@ -44,9 +32,6 @@ public class Fetcher {
 
     Properties props;
     URLName url;
-    Session session;
-    Store store;
-    IMAPFolder folder;
 
     public static Long TIMEOUT = 1000 * 5L;
     public static Long FETCH_DELAY = 1000 * 15L;
@@ -87,15 +72,16 @@ public class Fetcher {
                 a.password);
     }
 
-    private void connect() throws MessagingException, ConnectException {
+    private ImapState connect() throws MessagingException, ConnectException {
         if(!Global.hasNetwork(context)){
             throw new ConnectException();
         }
-        session = Session.getInstance(props);
-        store = session.getStore(url);
+        Session session = Session.getInstance(props);
+        Store store = session.getStore(url);
         store.connect();
-        folder = (IMAPFolder) store.getFolder(url);
+        IMAPFolder folder = (IMAPFolder) store.getFolder(url);
         folder.open(Folder.READ_ONLY);
+        return new ImapState(session, store, folder);
     }
 
     private Long getUidNext(IMAPFolder folder, final String folderName) throws MessagingException {
@@ -107,16 +93,17 @@ public class Fetcher {
         });
     }
 
-    private Long fetchMail() throws MessagingException {
-        Long uidnext = getUidNext(folder, "Inbox");
+    private Long fetchMail(ImapState state) throws MessagingException {
+        Long uidnext = getUidNext(state.folder, "Inbox");
         Integer previous = (a.uidnext != null && a.uidnext != 0) ? a.uidnext : 1;
         if (previous != uidnext.intValue()) {
-            Message[] msgs = folder.getMessagesByUID(previous, uidnext - 1);
+            Message[] msgs = state.folder.getMessagesByUID(previous, uidnext - 1);
             notifyUpdates(msgs);
             a.uidnext = uidnext.intValue();
             a.save(Global.getWriteDb(context));
             new Ledger(
                     a._id,
+                    Account.tableName,
                     new Date(),
                     Ledger.MESSAGE_COUNT_TYPE,
                     String.format("messages %d..%d", previous, uidnext),
@@ -124,11 +111,11 @@ public class Fetcher {
                     null
             ).log(Global.getWriteDb(context), context);
         }
-        if(folder != null && folder.isOpen()) {
-            folder.close(false);
+        if(state.folder != null && state.folder.isOpen()) {
+            state.folder.close(false);
         }
-        if(store != null && store.isConnected()) {
-            store.close();
+        if(state.store != null && state.store.isConnected()) {
+            state.store.close();
         }
         return uidnext;
     }
@@ -151,6 +138,7 @@ public class Fetcher {
     public void loop(){
         new Ledger(
                 a._id,
+                Account.tableName,
                 new Date(),
                 Ledger.INFO_TYPE,
                 "fetch task created",
@@ -163,48 +151,73 @@ public class Fetcher {
             @Override
             public void run() {
                 while (true) {
+                    if(!Account.isRunningById(context, _account._id)){
+                        break;
+                    }
                     Long delay = Fetcher.FETCH_DELAY;
                     Date startDebug = new Date();
                     Long uidnext;
+                    String exceptType = null;
+                    Exception exc = null;
                     try {
-                        connect();
-                        uidnext = fetchMail();
+                        uidnext = fetchMail(connect());
                         new Ledger(
                                 _account._id,
+                                Account.tableName,
                                 new Date(),
-                                Ledger.LATEST_FETCH_TYPE,
+                                Ledger.UID_NEXT,
                                 String.format("duration %d",
                                         new Date().getTime() - startDebug.getTime()),
                                 uidnext,
                                 null
                         ).log(Global.getWriteDb(context), context);
+                    } catch (ConnectException e) {
+                        delay *= 5;
+                        exceptType = Ledger.NETWORK_UNREACHABLE;
+                        exc = e;
                     } catch (Exception e) {
                         delay *= 3;
-                        new Ledger(
-                                _account._id,
-                                new Date(),
-                                Ledger.NETWORK_UNREACHABLE,
-                                _account.imapHost,
-                                new Date().getTime() - startDebug.getTime(),
-                                Global.stackToString(e)
-                        ).log(Global.getWriteDb(context), context);
+                        exceptType = Ledger.MESSAGING_ERROR;
+                        exc = e;
                     }
+
                     try {
                         Thread.sleep(delay);
                     } catch (InterruptedException e) {
+                        exceptType = Ledger.SLEEP_THREAD_INTERRUPTED;
+                        exc = e;
+                    }
+
+                    if(exc != null) {
                         new Ledger(
                                 _account._id,
+                                Account.tableName,
                                 new Date(),
-                                Ledger.SLEEP_THREAD_INTERRUPTED,
-                                null,
+                                exceptType,
+                                _account.imapHost,
                                 new Date().getTime() - startDebug.getTime(),
-                                Global.stackToString(e)
+                                Global.stackToString(exc)
                         ).log(Global.getWriteDb(context), context);
+                    }
+
+                    if(exceptType.equals(Ledger.SLEEP_THREAD_INTERRUPTED)) {
                         break;
                     }
                 }
             }
         };
         new Thread(runnable).start();
+    }
+
+    public class ImapState {
+        Session session;
+        Store store;
+        IMAPFolder folder;
+
+        public ImapState(Session session, Store store, IMAPFolder folder) {
+            this.session = session;
+            this.store = store;
+            this.folder = folder;
+        }
     }
 }

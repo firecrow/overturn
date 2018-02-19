@@ -14,8 +14,12 @@ import java.util.Date;
 
 public class Ledger extends Data {
     public static String tableName  = "ledger";
+
     @DbField
-    public Long account_id;
+    public Long parent_id;
+
+    @DbField
+    public String entity;
 
     @DbField
     public Date date;
@@ -35,17 +39,22 @@ public class Ledger extends Data {
     public static String ERROR_TYPE = "error";
     public static String NETWORK_STATUS_TYPE = "network_status";
     public static String NETWORK_UNREACHABLE = "network_unreachable";
+    public static String MESSAGING_ERROR = "messaging_error";
     public static String INFO_TYPE = "info";
-    public static String LATEST_FETCH_TYPE = "latest_fetch";
+    public static String UID_NEXT = "uidnext";
     public static String MESSAGE_COUNT_TYPE = "message_count";
     public static String SLEEP_THREAD_INTERRUPTED = "sleep_thread_interrupted";
+    public static String ACCOUNT_RUNNING_STATUS = "account_running_status";
+    public static String RUNNING = "running";
+    public static String STOPED = "stopped";
 
     public static String LEDGER_UPDATED = "net.crowmail.LEDGER_UPDATED";
 
     public Ledger() {}
 
-    public Ledger(Long account_id, Date date, String type, String textval, Long longval, String description) {
-        this.account_id = account_id;
+    public Ledger(Long parent_id, String entity, Date date, String type, String textval, Long longval, String description) {
+        this.parent_id = parent_id;
+        this.entity = entity;
         this.date = date;
         this.type = type;
         this.textval = textval;
