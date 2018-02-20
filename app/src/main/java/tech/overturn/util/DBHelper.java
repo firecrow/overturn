@@ -7,9 +7,6 @@ import android.util.Log;
 
 import tech.overturn.util.Orm;
 import tech.overturn.model.Account;
-import tech.overturn.model.CrowMessage;
-import tech.overturn.model.Email;
-import tech.overturn.model.EmailToMsg;
 import tech.overturn.model.Ledger;
 
 public class DBHelper extends SQLiteOpenHelper {
@@ -22,9 +19,6 @@ public class DBHelper extends SQLiteOpenHelper {
 
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(Orm.getCreateTable(Account.tableName, Account.class));
-        db.execSQL(Orm.getCreateTable(CrowMessage.tableName, CrowMessage.class));
-        db.execSQL(Orm.getCreateTable(Email.tableName, Email.class));
-        db.execSQL(Orm.getCreateTable(EmailToMsg.tableName, EmailToMsg.class));
         db.execSQL(Orm.getCreateTable(Ledger.tableName, Ledger.class));
     }
 
