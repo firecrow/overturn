@@ -49,6 +49,7 @@ public class Ledger extends Data {
     public static String SLEEP_THREAD_INTERRUPTED = "sleep_thread_interrupted";
     public static String ACCOUNT_RUNNING_STATUS = "account_running_status";
     public static String RUNNING = "running";
+    public static String QUEUED = "queued";
     public static String STOPED = "stopped";
     public static String STOPING = "stoping";
 

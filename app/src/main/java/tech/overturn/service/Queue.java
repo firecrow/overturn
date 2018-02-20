@@ -57,14 +57,16 @@ public class Queue extends Service {
             if (intent.getAction().equals(Global.TRIGGER_FETCH)) {
                 Long id = intent.getLongExtra("account_id", -1L);
                 new Ledger(id, Account.tableName, new Date(), Ledger.ACCOUNT_RUNNING_STATUS,
-                        Ledger.RUNNING, null, null
+                        Ledger.QUEUED, null, null
                 ).log(Global.getWriteDb(getApplicationContext()), getApplicationContext());
                 runLoops(false);
             }
             if (intent.getAction().equals(Global.TRIGGER_STOP)) {
                 Long id = intent.getLongExtra("account_id", -1L);
+                String existing =  Account.runStateForId(getApplicationContext(), id);
+                String status = existing.equals(Ledger.RUNNING) ? Ledger.STOPING : Ledger.STOPED;
                 new Ledger(id, Account.tableName, new Date(), Ledger.ACCOUNT_RUNNING_STATUS,
-                        Ledger.STOPING, null, null
+                        status, null, null
                 ).log(Global.getWriteDb(getApplicationContext()), getApplicationContext());
             }
         };
@@ -75,9 +77,12 @@ public class Queue extends Service {
     private void runLoops(Boolean initial) {
         List<Long> ids = Account.allIds(getApplicationContext());
         for(Long id: ids) {
-            if (initial || Account.runStateForId(getApplicationContext(), id).equals(Ledger.STOPED)) {
+            if (initial || Account.runStateForId(getApplicationContext(), id).equals(Ledger.QUEUED)) {
                 Account account = Account.byId(Global.getReadDb(getApplicationContext()), id);
                 new Fetcher(getApplicationContext(), account).loop();
+                new Ledger(id, Account.tableName, new Date(), Ledger.ACCOUNT_RUNNING_STATUS,
+                        Ledger.RUNNING, null, null
+                ).log(Global.getWriteDb(getApplicationContext()), getApplicationContext());
             }
         }
     }
