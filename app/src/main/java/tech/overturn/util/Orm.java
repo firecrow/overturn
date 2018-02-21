@@ -25,214 +25,135 @@ import java.util.List;
 import java.util.Map;
 
 import tech.overturn.model.Data;
+import tech.overturn.model.Ledger;
 
 import static java.lang.Math.toIntExact;
 
 
 public class Orm {
 
-    public static Data objFromCursor(Cursor cursor, String[] cols, Class<? extends Data> cls) {
+    static String[] fields = new String[]{"_id", "entity_id", "date", "entity", "type", "longval", "strval"};
+
+    public static Ledger ledgerFromCursor(Cursor cursor) {
+        Ledger ledger = new Ledger(
+            cursor.getLong(1),
+            cursor.getString(2),
+            new Date(cursor.getLong(3)),
+            cursor.getString(4),
+            cursor.getLong(5),
+            cursor.getString(6)
+        );
+        ledger._id = cursor.getLong(0);
+    }
+
+    public static String getCreateTable() {
+        return  ""
+                + "CREATE TABLE ledger ( "
+                + "  _id INTEGER PRIMARY_KEY_AUTOINCREMENT "
+                + "  entity_id INTEGER, "
+                + "  date INTEGER, "
+                + "  entity TEXT, "
+                + "  type TEXT, "
+                + "  longval INTEGER, "
+                + "  strval TEXT "
+                + ");"
+                ;
+
+    private static Long insertMaster(SQLiteDatabase db, String entity) {
+        ContentValues vals = new ContentValues();
+        vals.put("entity", entity);
+        return db.insertOrThrow(Ledger.SCHEMA, null, vals);
+    }
+
+    public static void upsert(SQLiteDatabase db, Data obj) {
+        db.beginTransaction();
+        if(obj._id == null || obj._id == 0 || getMaster(db, obj._id, obj._entity) == null) {
+            obj._id = Orm.insertMaster(db, obj._entity);
+        }
+        try {
+            for (Field f : obj.getClass().getFields()) {
+                if (f.isAnnotationPresent(DbField.class)) {
+                    if(f.get(obj) == null) {
+                        unsetLedger(db, obj._id, obj._entity, f.getName());
+                        continue;
+                    }
+                    Ledger ledger = new Ledger();
+                    ledger.entity = obj._entity;
+                    ledger.entity_id = obj._id;
+                    ledger.type = f.getName();
+                    if (f.getType() == Long.class) {
+                        ledger.longval = (Long) f.get(obj);
+                    } else if (f.getType() == Date.class) {
+                        ledger.longval = ((Date)f.get(obj)).getTime();
+                    } else if (f.getType() == String.class) {
+                        ledger.strval = (String) f.get(obj);
+                    }
+                    ledger.save(db);
+                }
+            }
+        } catch(Exception e){}
+        db.endTransaction();
+    }
+
+    public static Data byId(SQLiteDatabase db, Class<? extends Data> cls, String entity, Long entity_id) {
+        Ledger master = ledgersById(db, entity, entity_id);
         Data obj = null;
         try {
             obj = cls.newInstance();
-        }catch (InstantiationException e) {
-            // TODO: handle this better
-        }catch (IllegalAccessException e) {
-            // TODO: handle this better
-        };
-        int idx;
-        Field fields[] = cls.getFields();
-        List<String> colsList = Arrays.asList(cols);
-        for (int i = 0; i < fields.length; i++) {
-            try {
-                Field f = fields[i];
-                String name = f.getName();
-                idx = colsList.indexOf(name);
-                if (idx == -1) {
-                    continue;
+            obj._id = master._id;
+            obj._entity = entity;
+            for (Ledger item: master.children) {
+                Field f = cls.getField(item.type);
+                if(f.getType() == Date.class) {
+                    f.set(obj, new Date(item.longval));
+                }else if(f.getType() == Long.class) {
+                    f.set(obj, item.longval);
+                }else if(f.getType() == String.class) {
+                    f.set(obj, item.strval);
                 }
-                if (f.getType().equals(Integer.class)) {
-                    f.set(obj, cursor.getInt(idx));
-                } else if (f.getType().equals(Long.class)) {
-                    f.set(obj, cursor.getLong(idx));
-                } else if (f.getType().equals(Date.class)) {
-                    f.set(obj, new Date(cursor.getLong(idx)));
-                } else if (f.getType().equals(String.class)) {
-                    f.set(obj, cursor.getString(idx));
-                }
-            } catch (IllegalAccessException e){
-                // TODO: figure out how to handle this better
             }
-        }
-        return obj;
+            return obj;
+        } catch (Exception e) {}
     }
 
-    public static String getCreateTable(String table, Class cls) {
-        String query = "";
-        query += "CREATE TABLE "+table +" ( ";
-        query += "_id INTEGER PRIMARY KEY AUTOINCREMENT";
-        Field fields[] = cls.getFields();
-        Log.d("fcrow", String.format("%d",fields.length));
-        for (int i = 0; i < fields.length; i++) {
-            Field f = fields[i];
-            if(!isDbField(f) || Modifier.isStatic(f.getModifiers()) || f.getName() == "_id"){
-                continue;
-            }
-            query += ", "+ f.getName().toLowerCase();
-            if(f.getType().equals(Integer.class)) {
-                query += " INT ";
-            }else if(f.getType().equals(Long.class) || f.getType().equals(Date.class)) {
-                query += " INTEGER ";
-            }else if(f.getType().equals(String.class)) {
-                query += " TEXT ";
-            }
-        }
-        query += " );";
-        return query;
-    }
-
-    public static void update(SQLiteDatabase db, String table, Data obj) {
-        String className = obj.getClass().getName();
-        ContentValues vals = new ContentValues();
-        Field fields[] = obj.getClass().getFields();
-        for (int i = 0; i < fields.length; i++) {
-            Field f = fields[i];
-            if (!isDbField(f) || Modifier.isStatic(f.getModifiers()) || f.getName().equals("_id") || f.getName().equals("serialVersionUID")) {
-                continue;
-            }
-            try {
-                Object value = f.get(obj);
-                String declaring = f.getDeclaringClass().getName();
-                if(className.equals(declaring) && value != null) {
-                    if(value.getClass() == Date.class) {
-                        value = ((Date)value).getTime();
-                    }
-                    vals.put(f.getName(), value.toString());
-                }
-            } catch (IllegalAccessException e){
-                // TODO: handle this better
-            }
-        }
-        if (vals.size() > 0) {
-            String where = String.format("_id=%d", obj._id);
-            int res = db.update(table, vals, where, null);
-            Log.d("fcrow", String.format("--- update res:%d '%s'", res, where));
-        }
-    }
-
-    public static void insert(SQLiteDatabase db, String table, Data obj) {
-        ContentValues vals = new ContentValues();
-        Field fields[] = obj.getClass().getFields();
-        for (int i = 0; i < fields.length; i++) {
-            String fname = fields[i].getName();
-            Field f = fields[i];
-            try {
-                if(isDbField(f) && !Modifier.isStatic(f.getModifiers()) && fname != "_id" && fname != "serialVersionUID" && f.get(obj) != null) {
-                    if(f.getType() == Integer.class) {
-                        Integer value = (Integer) f.get(obj);
-                        if(value != null) {
-                            vals.put(fname, value.toString());
-                        }
-                    }
-                    else if(f.getType() == Long.class) {
-                        Long value = (Long) f.get(obj);
-                        if(value != null) {
-                            vals.put(fname, value.toString());
-                        }
-                    }
-                    else if(f.getType() == Date.class) {
-                        Long value = ((Date) f.get(obj)).getTime();
-                        if(value != null) {
-                            vals.put(fname, value.toString());
-                        }
-                    }
-                    else if(f.getType() == String.class) {
-                        String value = (String) f.get(obj);
-                        if(value != null) {
-                            vals.put(fname, value);
-                        }
-                    }
-                }
-            } catch (IllegalAccessException e) {
-                // TODO: handle this better
-                Log.e("fcrow", "error in insert illegal");
-            }
-        }
-        if (vals.size() > 0) {
-            obj._id = db.insertOrThrow(table, null, vals);
-        }
-    }
-
-    public static String[] getSelectColumns(Class<? extends Data> cls) {
-        Field[] fields =  cls.getFields();
-        List<String> cols = new ArrayList<String>();
-        cols.add("_id");
-        for(int i = 0; i < fields.length; i++) {
-            if (!isDbField(fields[i]) || Modifier.isStatic(fields[i].getModifiers()) || fields[i].getName().equals("serialVersionUID")) {
-                continue;
-            }
-            cols.add(fields[i].getName());
-        }
-        return cols.toArray(new String[cols.size()]);
-    }
-
-    public static Data byId(SQLiteDatabase db, String table, Class<? extends Data> cls, Long id) {
-        String[] cols = getSelectColumns(cls);
+    public static Ledger getMaster(SQLiteDatabase db, Long entity_id, String entity) {
         Cursor cursor = db.query(
-            table,
-            cols,
-            String.format("_id = %d", id),
-            null,
-            null,
-            null,
-            null
-        );
-        Data obj = null;
-        int count = cursor.getCount();
-        if(count == 1 && cursor.moveToNext()) {
-            obj = objFromCursor(cursor, cols, cls);
-        } else {
-            // TODO: handle this error
-        }
-        cursor.close();
-        return obj;
-    }
-
-    public static List<? extends Data> byQuery(SQLiteDatabase db,
-            String table,
-            Class<? extends Data> cls,
-            String where,
-            String[] args,
-            String order,
-            Integer limit
-    ) {
-        String[] cols = getSelectColumns(cls);
-        List<Data> objs = new ArrayList<Data>();
-        Cursor cursor = db.query(
-                table,
-                cols,
-                where,
-                args,
+                Ledger.SCHEMA,
+                fields,
+                "_id = ? and entity = ?",
+                new String[]{entity_id.toString(), entity},
                 null,
                 null,
-                order,
-                limit != null ? limit.toString() : null
+                "date desc",
+                "1"
         );
-        while(cursor.moveToNext()) {
-            objs.add(objFromCursor(cursor, cols, cls));
+        cursor.moveToNext();
+        Ledger master = null;
+        if(cursor.getCount() == 1) {
+            master = ledgerFromCursor (cursor);
         }
         cursor.close();
-        return objs;
+        return master;
     }
 
-    public static List<? extends Data> byQueryRaw(SQLiteDatabase db, Class<? extends Data> cls, String[] cols, String qry, String[] args) {
-        List<Data> objs = new ArrayList<Data>();
-        Cursor cursor = db.rawQuery(qry, args);
-        while(cursor.moveToNext()) {
-            objs.add(objFromCursor(cursor, cols, cls));
+    public static Ledger ledgersById(SQLiteDatabase db, Long entity_id, String entity) {
+        Ledger master = getMaster(db, entity_id, entity);
+        if(master == null) {
+            return null;
         }
-        cursor.close();
-        return objs;
+        Cursor cursor = db.query(
+            Ledger.SCHEMA,
+            fields,
+            "entity_id = ? and entity = ?",
+            new String[]{entity_id.toString(), entity},
+            null,
+            null,
+            "date desc"
+        );
+        while (cursor.moveToNext()) {
+            master.children.add(ledgerFromCursor(cursor));
+        }
+        return master;
     }
 
     public static void fillUI(Data obj, Map<String, View> ui) {
@@ -262,9 +183,7 @@ public class Orm {
                         }
                     }
                 }
-            }catch(IllegalAccessException e){
-                // TODO: figure out what to do
-            }
+            }catch(IllegalAccessException e){}
         }
     }
 
@@ -309,7 +228,8 @@ public class Orm {
         }
     }
 
-    public static Boolean isDbField(Field field) {
-        return field.isAnnotationPresent(DbField.class);
+    public static void unsetLedger(SQLiteDatabase db, Long entity_id, String entity, String type) {
+        db.delete(Ledger.SCHEMA, "entity_id = ? and entity = ? and type = ?",
+                new String[]{entity_id.toString(), entity, type});
     }
 }

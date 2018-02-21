@@ -18,8 +18,7 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     public void onCreate(SQLiteDatabase db) {
-        db.execSQL(Orm.getCreateTable(Account.tableName, Account.class));
-        db.execSQL(Orm.getCreateTable(Ledger.tableName, Ledger.class));
+        db.execSQL(Orm.getCreateTable());
     }
 
     public void onUpgrade(SQLiteDatabase db, int old, int version) {}

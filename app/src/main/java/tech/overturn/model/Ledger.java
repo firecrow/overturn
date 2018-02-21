@@ -11,32 +11,20 @@ import android.util.Log;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 public class Ledger extends Data {
-    public static String tableName  = "ledger";
+    public static String SCHEMA = "ledger";
 
-    @DbField
-    public Long parent_id;
-
-    @DbField
+    public Long entity_id;
     public String entity;
-
-    @DbField
     public Date date;
-
-    @DbField
     public String type;
-
-    @DbField
-    public String description;
-
-    @DbField
     public Long longval;
-
-    @DbField
-    public String textval;
+    public String strval;
+    public List<Ledger> children;
 
     public static String ERROR_TYPE = "error";
     public static String NETWORK_STATUS_TYPE = "network_status";
@@ -55,21 +43,28 @@ public class Ledger extends Data {
 
     public static String LEDGER_UPDATED = "tech.overturn.LEDGER_UPDATED";
 
-    public Ledger() {}
+    public Ledger() {
+        children = new ArrayList<Ledger>();
+    }
 
-    public Ledger(Long parent_id, String entity, Date date, String type, String textval, Long longval, String description) {
-        this.parent_id = parent_id;
+    public Ledger(String entity) {
+        children = new ArrayList<Ledger>();
+        this.entity = entity;
+    }
+
+    public Ledger(Long entity_id, String entity, Date date, String type, Long longval, String strval) {
+        children = new ArrayList<Ledger>();
+        this.entity_id = entity_id;
         this.entity = entity;
         this.date = date;
         this.type = type;
-        this.textval = textval;
+        this.strval = strval;
         this.longval = longval;
-        this.description = description;
     }
 
     public void log(SQLiteDatabase db, Context context) {
         Log.d("fcrow", toString());
-        Orm.insert(db, Ledger.tableName, this);
+        Orm.insert(db, Ledger.SCHEMA, this);
         Intent intent = new Intent(LEDGER_UPDATED);
         context.sendBroadcast(intent);
     }
@@ -80,7 +75,7 @@ public class Ledger extends Data {
             throw new IllegalArgumentException("entity or type missing");
         }
         List<Ledger> existing = (List<Ledger>) Orm.byQuery(Global.getWriteDb(context),
-                Ledger.tableName,
+                Ledger.SCHEMA,
                 Ledger.class,
                 "type = ? and entity = ? and parent_id = ?",
                 new String[]{type, entity, parent_id.toString()},
@@ -89,21 +84,16 @@ public class Ledger extends Data {
 
         if (existing.size() == 1) {
             this._id = existing.get(0)._id;
-            Orm.update(db, Ledger.tableName, this);
+            Orm.update(db, Ledger.SCHEMA, this);
         } else {
-            Orm.insert(db, Ledger.tableName, this);
+            Orm.insert(db, Ledger.SCHEMA, this);
         }
         Intent intent = new Intent(LEDGER_UPDATED);
         context.sendBroadcast(intent);
     }
 
     public String toString() {
-        return String.format("<Ledger %s -> %s/%d>", type, textval, longval);
+        return String.format("<Ledger %s -> %s/%d>", type, strval, longval);
     }
 
-    private static String stackToString(Exception e) {
-        StringWriter errors = new StringWriter();
-        e.printStackTrace(new PrintWriter(errors));
-        return errors.toString();
-    }
 }
