@@ -15,9 +15,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class Ledger extends Data {
+public class Ledger {
     public static String SCHEMA = "ledger";
 
+    public Long _id;
     public Long parent_id;
     public String entity;
     public Date date;
@@ -34,12 +35,14 @@ public class Ledger extends Data {
     public static String UID_NEXT = "uidnext";
     public static String MESSAGE_COUNT_TYPE = "message_count";
     public static String FETCH_TASK_CREATED = "fetch_task_created";
+    public static String LATEST_FETCH = "latest_fetch";
     public static String SLEEP_THREAD_INTERRUPTED = "sleep_thread_interrupted";
     public static String ACCOUNT_RUNNING_STATUS = "account_running_status";
     public static String RUNNING = "running";
     public static String QUEUED = "queued";
     public static String STOPED = "stopped";
     public static String STOPING = "stoping";
+    public static String ERROR = "error";
 
     public static String LEDGER_UPDATED = "tech.overturn.LEDGER_UPDATED";
 
@@ -62,15 +65,7 @@ public class Ledger extends Data {
         this.longval = longval;
     }
 
-    public void log(SQLiteDatabase db, Context context) {
-        Log.d("fcrow", toString());
-        Orm.upsert(db, this);
-        Intent intent = new Intent(LEDGER_UPDATED);
-        context.sendBroadcast(intent);
-    }
-
     public String toString() {
         return String.format("<Ledger %s -> %s/%d>", type, strval, longval);
     }
-
 }

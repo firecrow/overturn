@@ -44,10 +44,11 @@ public class Account extends ModelBase {
     public String imapSslType;
 
     @DbField
-    public Integer uidnext;
+    public Long uidnext;
 
     public Account(){
         super();
+        this._entity = tableName;
     }
 
     public static Account byId(SQLiteDatabase db, Long id){

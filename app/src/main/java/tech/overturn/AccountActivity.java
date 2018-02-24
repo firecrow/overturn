@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -107,6 +108,7 @@ public class AccountActivity extends AppCompatActivity {
     }
 
     public void goToLedger(Long id) {
+        Log.d("fcrow", "------------ going to ledger");
         Intent intent = new Intent(this, LedgerActivity.class);
         intent.putExtra("account_id", id);
         startActivity(intent);

@@ -52,7 +52,7 @@ public class LedgerAdapter extends ArrayAdapter<Ledger> {
         cont.type.setText(ledger.type);
         cont.date.setText(ledger.date.toString());
         cont.longval.setText(ledger.longval.toString());
-        cont.textval.setText(ledger.textval);
+        cont.textval.setText(ledger.strval);
         return row;
     }
 

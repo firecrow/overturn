@@ -20,6 +20,7 @@ import java.util.List;
 import tech.overturn.model.Ledger;
 
 public class Global {
+    public static final String GLOBAL = "global";
     public static final String CROWMAIL = "crowmail";
     public static final String CROWMAIL_ERROR = "crowmail_error";
     public static final String TRIGGER_SEND = "tech.overturn.TRIGGER_SEND";

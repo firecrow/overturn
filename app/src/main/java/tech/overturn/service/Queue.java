@@ -33,8 +33,8 @@ public class Queue extends Service {
                 .build();
 
         Orm.set(Global.getWriteDb(getApplicationContext()),
-                null, null, null, Ledger.INFO_TYPE, new Date(), null, "service created");
-        runLoops(true);
+                Global.GLOBAL, 0L, Ledger.INFO_TYPE, new Date(), null, "service created");
+        //runLoops(true);
     }
 
     @Override
@@ -52,7 +52,7 @@ public class Queue extends Service {
                 Long id = intent.getLongExtra("account_id", -1L);
 
                 Orm.set(Global.getWriteDb(getApplicationContext()),
-                        null, Account.tableName, id, Ledger.ACCOUNT_RUNNING_STATUS, new Date(),
+                        Account.tableName, id, Ledger.ACCOUNT_RUNNING_STATUS, new Date(),
                         null, Ledger.QUEUED);
                 runLoops(false);
             }
@@ -61,7 +61,7 @@ public class Queue extends Service {
                 String existing =  Account.runStateForId(getApplicationContext(), id);
                 String status = existing.equals(Ledger.RUNNING) ? Ledger.STOPING : Ledger.STOPED;
                 Orm.set(Global.getWriteDb(getApplicationContext()),
-                        null, Account.tableName, id, Ledger.ACCOUNT_RUNNING_STATUS, new Date(),
+                        Account.tableName, id, Ledger.ACCOUNT_RUNNING_STATUS, new Date(),
                         null, status);
             }
         };
@@ -75,9 +75,8 @@ public class Queue extends Service {
             if (initial || Account.runStateForId(getApplicationContext(), id).equals(Ledger.QUEUED)) {
                 Account account = Account.byId(Global.getReadDb(getApplicationContext()), id);
                 new Fetcher(getApplicationContext(), account).loop();
-                new Ledger(id, Account.tableName, new Date(), Ledger.ACCOUNT_RUNNING_STATUS,
-                        Ledger.RUNNING, null, null
-                ).log(Global.getWriteDb(getApplicationContext()), getApplicationContext());
+                Orm.set(Global.getWriteDb(getApplicationContext()),  
+                    Account.tableName, id, Ledger.ACCOUNT_RUNNING_STATUS, new Date(), null, Ledger.RUNNING);
             }
         }
     }
@@ -85,16 +84,8 @@ public class Queue extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.d("fcrow", "---------- service destroyed");
-        new Ledger(
-                null,
-                null,
-                new Date(),
-                Ledger.INFO_TYPE,
-                "service destroyed",
-                null,
-                null)
-        .log(Global.getWriteDb(getApplicationContext()), getApplicationContext());
+        Orm.insert(Global.getWriteDb(getApplicationContext()), 
+            Global.GLOBAL, 0L, Ledger.INFO_TYPE, new Date(), null, "service destroyed");
         stopSelf();
     }
 }
