@@ -51,37 +51,26 @@ public class Account extends ModelBase {
     }
 
     public static Account byId(SQLiteDatabase db, Long id){
-        Account a = (Account) Orm.byId(db, Account.tableName, Account.class, id);
+        Account a = (Account) Orm.byId(db, Account.class, Account.tableName, id);
         return a;
     }
 
     public static List<Long> allIds(Context context) {
-        List<Long> ids =  new ArrayList<Long>();
-        List<Id> _ids = (List<Id>) Orm.byQuery(Global.getWriteDb(context),
-                Account.tableName,
-                Id.class,
-                null,
-                null,
-                null,
-                null);
-        for(Id id: _ids) {
-            ids.add(id._id);
+        List<Id> ids =  Orm.idsByEntity(Global.getWriteDb(context), Account.tableName);
+        List<Long> longs = new ArrayList<Long>();
+        for(Id id: ids) {
+            longs.add(id._id);
         }
-        return ids;
+        return longs;
     }
 
     public static String runStateForId(Context context, Long id) {
-        List<Ledger> ldata = (List<Ledger>) Orm.byQuery(Global.getWriteDb(context),
-                Ledger.tableName,
-                Ledger.class,
-                String.format("type = ? AND entity = ? AND parent_id = ?"),
-                new String[]{Ledger.ACCOUNT_RUNNING_STATUS, Account.tableName, id.toString()},
-                "date desc",
-                1);
-        if (ldata.size() == 0) {
+        Ledger state = Orm.getAttribute(Global.getReadDb(context),
+                Ledger.ACCOUNT_RUNNING_STATUS, id, Account.tableName);
+        if (state == null) {
             return Ledger.STOPED;
         } else {
-            return ldata.get(0).textval;
+            return state.strval;
         }
     }
 }

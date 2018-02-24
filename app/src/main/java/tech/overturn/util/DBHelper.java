@@ -11,7 +11,7 @@ import tech.overturn.model.Ledger;
 
 public class DBHelper extends SQLiteOpenHelper {
     public static final int DB_VERSION = 1;
-    public static final String DB_FNAME = "crowmail.db";
+    public static final String DB_FNAME = "overturn.db";
 
     DBHelper(Context ctx) {
         super(ctx, DB_FNAME, null, DB_VERSION);

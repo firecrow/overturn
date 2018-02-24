@@ -30,7 +30,7 @@ public class AccountActivity extends AppCompatActivity {
             this.a = new Account();
         } else {
             this.a = (Account) Orm.byId(Global.getWriteDb(getApplicationContext()),
-                    Account.tableName, Account.class, id);
+                    Account.class, Account.tableName, id);
         }
         setUpUI();
         Orm.fillUI(a, a.ui);

@@ -13,10 +13,6 @@ public class Data {
     public String _entity;
 
     public void save(SQLiteDatabase db) {
-        if (_id != null) {
-            Orm.update(db, Account.tableName, this);
-        } else {
-            Orm.insert(db, Account.tableName, this);
-        }
+        Orm.upsert(db, this);
     }
 }

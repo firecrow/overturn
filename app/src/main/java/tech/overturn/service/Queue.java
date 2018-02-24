@@ -20,6 +20,7 @@ import java.util.Map;
 import tech.overturn.model.Account;
 import tech.overturn.model.Ledger;
 import tech.overturn.util.Global;
+import tech.overturn.util.Orm;
 
 public class Queue extends Service {
 
@@ -31,15 +32,8 @@ public class Queue extends Service {
                 .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
                 .build();
 
-        new Ledger(
-                null,
-                null,
-                new Date(),
-                Ledger.INFO_TYPE,
-                "service created",
-                null,
-                null)
-        .log(Global.getWriteDb(getApplicationContext()), getApplicationContext());
+        Orm.set(Global.getWriteDb(getApplicationContext()),
+                null, null, null, Ledger.INFO_TYPE, new Date(), null, "service created");
         runLoops(true);
     }
 
@@ -56,18 +50,19 @@ public class Queue extends Service {
         if (intent != null) {
             if (intent.getAction().equals(Global.TRIGGER_FETCH)) {
                 Long id = intent.getLongExtra("account_id", -1L);
-                new Ledger(id, Account.tableName, new Date(), Ledger.ACCOUNT_RUNNING_STATUS,
-                        Ledger.QUEUED, null, null
-                ).log(Global.getWriteDb(getApplicationContext()), getApplicationContext());
+
+                Orm.set(Global.getWriteDb(getApplicationContext()),
+                        null, Account.tableName, id, Ledger.ACCOUNT_RUNNING_STATUS, new Date(),
+                        null, Ledger.QUEUED);
                 runLoops(false);
             }
             if (intent.getAction().equals(Global.TRIGGER_STOP)) {
                 Long id = intent.getLongExtra("account_id", -1L);
                 String existing =  Account.runStateForId(getApplicationContext(), id);
                 String status = existing.equals(Ledger.RUNNING) ? Ledger.STOPING : Ledger.STOPED;
-                new Ledger(id, Account.tableName, new Date(), Ledger.ACCOUNT_RUNNING_STATUS,
-                        status, null, null
-                ).log(Global.getWriteDb(getApplicationContext()), getApplicationContext());
+                Orm.set(Global.getWriteDb(getApplicationContext()),
+                        null, Account.tableName, id, Ledger.ACCOUNT_RUNNING_STATUS, new Date(),
+                        null, status);
             }
         };
 

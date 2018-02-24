@@ -18,7 +18,7 @@ import java.util.List;
 public class Ledger extends Data {
     public static String SCHEMA = "ledger";
 
-    public Long entity_id;
+    public Long parent_id;
     public String entity;
     public Date date;
     public String type;
@@ -52,9 +52,9 @@ public class Ledger extends Data {
         this.entity = entity;
     }
 
-    public Ledger(Long entity_id, String entity, Date date, String type, Long longval, String strval) {
+    public Ledger(Long parent_id, String entity, Date date, String type, Long longval, String strval) {
         children = new ArrayList<Ledger>();
-        this.entity_id = entity_id;
+        this.parent_id = parent_id;
         this.entity = entity;
         this.date = date;
         this.type = type;
@@ -64,30 +64,7 @@ public class Ledger extends Data {
 
     public void log(SQLiteDatabase db, Context context) {
         Log.d("fcrow", toString());
-        Orm.insert(db, Ledger.SCHEMA, this);
-        Intent intent = new Intent(LEDGER_UPDATED);
-        context.sendBroadcast(intent);
-    }
-
-    public void update(SQLiteDatabase db, Context context, String type, String entity, Long parent_id) {
-        if(parent_id == null) parent_id = 0L;
-        if(type == null || entity == null) {
-            throw new IllegalArgumentException("entity or type missing");
-        }
-        List<Ledger> existing = (List<Ledger>) Orm.byQuery(Global.getWriteDb(context),
-                Ledger.SCHEMA,
-                Ledger.class,
-                "type = ? and entity = ? and parent_id = ?",
-                new String[]{type, entity, parent_id.toString()},
-                "date desc",
-                1);
-
-        if (existing.size() == 1) {
-            this._id = existing.get(0)._id;
-            Orm.update(db, Ledger.SCHEMA, this);
-        } else {
-            Orm.insert(db, Ledger.SCHEMA, this);
-        }
+        Orm.upsert(db, this);
         Intent intent = new Intent(LEDGER_UPDATED);
         context.sendBroadcast(intent);
     }

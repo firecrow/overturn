@@ -7,6 +7,7 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteCursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import tech.overturn.model.Data;
+import tech.overturn.model.Id;
 import tech.overturn.model.Ledger;
 
 import static java.lang.Math.toIntExact;
@@ -32,7 +34,7 @@ import static java.lang.Math.toIntExact;
 
 public class Orm {
 
-    static String[] fields = new String[]{"_id", "entity_id", "date", "entity", "type", "longval", "strval"};
+    static String[] fields = new String[]{"_id", "parent_id", "date", "entity", "type", "longval", "strval"};
 
     public static Ledger ledgerFromCursor(Cursor cursor) {
         Ledger ledger = new Ledger(
@@ -44,13 +46,31 @@ public class Orm {
             cursor.getString(6)
         );
         ledger._id = cursor.getLong(0);
+        return ledger;
+    }
+
+    public static List<Ledger> recentLedgers(SQLiteDatabase db, Long since) {
+        List<Ledger> ledgers = new ArrayList<Ledger>();
+        Cursor cursor = db.query(
+                Ledger.SCHEMA,
+                fields,
+                "date > ?" ,
+                new String[]{new Long(new Date().getTime() - since).toString()},
+                null,
+                null,
+                "date desc"
+        );
+        while(cursor.moveToNext()){
+            ledgers.add(ledgerFromCursor(cursor));
+        }
+        return ledgers;
     }
 
     public static String getCreateTable() {
-        return  ""
+        return ""
                 + "CREATE TABLE ledger ( "
                 + "  _id INTEGER PRIMARY_KEY_AUTOINCREMENT "
-                + "  entity_id INTEGER, "
+                + "  parent_id INTEGER, "
                 + "  date INTEGER, "
                 + "  entity TEXT, "
                 + "  type TEXT, "
@@ -58,6 +78,7 @@ public class Orm {
                 + "  strval TEXT "
                 + ");"
                 ;
+    }
 
     private static Long insertMaster(SQLiteDatabase db, String entity) {
         ContentValues vals = new ContentValues();
@@ -79,7 +100,7 @@ public class Orm {
                     }
                     Ledger ledger = new Ledger();
                     ledger.entity = obj._entity;
-                    ledger.entity_id = obj._id;
+                    ledger.parent_id = obj._id;
                     ledger.type = f.getName();
                     if (f.getType() == Long.class) {
                         ledger.longval = (Long) f.get(obj);
@@ -95,8 +116,8 @@ public class Orm {
         db.endTransaction();
     }
 
-    public static Data byId(SQLiteDatabase db, Class<? extends Data> cls, String entity, Long entity_id) {
-        Ledger master = ledgersById(db, entity, entity_id);
+    public static Data byId(SQLiteDatabase db, Class<? extends Data> cls, String entity, Long parent_id) {
+        Ledger master = ledgersById(db, parent_id, entity);
         Data obj = null;
         try {
             obj = cls.newInstance();
@@ -112,16 +133,184 @@ public class Orm {
                     f.set(obj, item.strval);
                 }
             }
-            return obj;
         } catch (Exception e) {}
+        return obj;
     }
 
-    public static Ledger getMaster(SQLiteDatabase db, Long entity_id, String entity) {
+    public static  List<Id> idsByEntity(SQLiteDatabase db, String entity) {
+        List<Id> ids = new ArrayList<Id>();
+        Cursor cursor = db.query(
+                Ledger.SCHEMA,
+                new String[]{"_id"},
+                "entity = ?",
+                new String[]{entity},
+                null,
+                null,
+                "date desc"
+        );
+        while (cursor.moveToNext()) {
+            ids.add(new Id(cursor.getLong(0)));
+        }
+        cursor.close();
+        return ids;
+    }
+
+    public static List<? extends Data> byEntity(SQLiteDatabase db, Class<? extends Data> cls, String entity) {
+        List<Id> ids = idsByEntity(db, entity);
+        List<Data> list = new ArrayList<Data>();
+        for(Id id : ids) {
+            list.add(Orm.byId(db, cls, entity, id._id));
+        }
+        return list;
+    }
+
+    public static Ledger getAttribute(SQLiteDatabase db, String type, Long parent_id, String entity) {
+        Ledger att = null;
+        Cursor cursor = db.query(
+                Ledger.SCHEMA,
+                fields,
+                String.format("type = ? AND entity = ? AND parent_id = ?"),
+                new String[]{type, entity, parent_id.toString()},
+                null,
+                null,
+                "date desc",
+                "1"
+        );
+        cursor.moveToNext();
+        if(cursor.getCount() == 1) {
+            att = ledgerFromCursor (cursor);
+        }
+        cursor.close();
+        return att;
+    }
+
+    public static void set(SQLiteDatabase db,
+            Long id, String entity, Long parent_id, String type, Date date, Long longval, String strval) {
+        Ledger existing = get(db, id, entity, parent_id, type, null,null);
+        if(existing == null) {
+            _insert(db, entity, parent_id, type, date, longval, strval);
+        }else {
+            _update(db, existing._id, entity, parent_id, type, date, longval, strval);
+        }
+    }
+
+    public static Ledger get(SQLiteDatabase db,
+            Long id, String entity, Long parent_id, String type, Long longval, String strval) {
+        List<String> values = new ArrayList<String>();
+        List<String> columns = new ArrayList<String>();
+        Ledger ledger = null;
+
+        if (id != null) {
+            columns.add("_id = ?");
+            values.add(id.toString());
+        }
+        if (entity != null) {
+            columns.add("entity = ?");
+            values.add(entity);
+        }
+        if (parent_id != null) {
+            columns.add("parent_id = ?");
+            values.add(parent_id.toString());
+        }
+        if (type != null) {
+            columns.add("and type = ?");
+            values.add(type);
+        }
+        if (longval != null) {
+            columns.add("and longval = ?");
+            values.add(longval.toString());
+        }
+        if(strval != null) {
+            columns.add("and strval = ?");
+            values.add(strval);
+        }
+
+        Cursor cursor = db.query(
+                Ledger.SCHEMA,
+                fields,
+                TextUtils.join(" and ", columns),
+                values.toArray(new String[values.size()]),
+                null,
+                null,
+                "date desc",
+                "1"
+        );
+        cursor.moveToNext();
+        if(cursor.getCount() == 1) {
+            ledger = ledgerFromCursor(cursor);
+        }
+        cursor.close();
+        return ledger;
+    }
+
+
+    public static Ledger getLedgerById(SQLiteDatabase db, Long id) {
+        Ledger ledger = null;
+        Cursor cursor = db.query(
+                Ledger.SCHEMA,
+                fields,
+                String.format("_id = ?"),
+                new String[]{id.toString()},
+                null,
+                null,
+                null
+        );
+        cursor.moveToNext();
+        if(cursor.getCount() == 1) {
+            ledger = ledgerFromCursor(cursor);
+        }
+        cursor.close();
+        return ledger;
+    }
+
+    public static Long _insert(SQLiteDatabase db,
+            String entity, Long parent_id, String type, Date date, Long longval, String strval) {
+        Ledger ledger = null;
+
+        ContentValues vals = new ContentValues();
+        if(entity != null)
+            vals.put("entity", entity);
+        if(parent_id != null)
+            vals.put("parent_id", parent_id.toString());
+        if(type != null)
+            vals.put("type", type.toString());
+        if(date != null)
+            vals.put("date", new Long(date.getTime()).toString());
+        if(longval != null)
+            vals.put("longval", longval.toString());
+        if(strval != null)
+            vals.put("strval", longval.toString());
+
+        return db.insertOrThrow(Ledger.SCHEMA, null, vals);
+    }
+
+    public static void _update(SQLiteDatabase db,
+            Long id, String entity, Long parent_id, String type, Date date, Long longval, String strval) {
+        Ledger ledger = null;
+
+        ContentValues vals = new ContentValues();
+        if(entity != null)
+            vals.put("entity", entity);
+        if(parent_id != null)
+            vals.put("parent_id", parent_id.toString());
+        if(type != null)
+            vals.put("type", type.toString());
+        if(longval != null)
+            vals.put("longval", longval.toString());
+        if(date != null)
+            vals.put("date", new Long(date.getTime()).toString());
+        if(strval != null)
+            vals.put("strval", longval.toString());
+
+        db.update(Ledger.SCHEMA, vals, "_id=?", new String[]{id.toString()});
+    }
+
+    public static Ledger getMaster(SQLiteDatabase db, Long parent_id, String entity) {
         Cursor cursor = db.query(
                 Ledger.SCHEMA,
                 fields,
                 "_id = ? and entity = ?",
-                new String[]{entity_id.toString(), entity},
+                new String[]{parent_id.toString(), entity},
                 null,
                 null,
                 "date desc",
@@ -136,16 +325,16 @@ public class Orm {
         return master;
     }
 
-    public static Ledger ledgersById(SQLiteDatabase db, Long entity_id, String entity) {
-        Ledger master = getMaster(db, entity_id, entity);
+    public static Ledger ledgersById(SQLiteDatabase db, Long parent_id, String entity) {
+        Ledger master = getMaster(db, parent_id, entity);
         if(master == null) {
             return null;
         }
         Cursor cursor = db.query(
             Ledger.SCHEMA,
             fields,
-            "entity_id = ? and entity = ?",
-            new String[]{entity_id.toString(), entity},
+            "parent_id = ? and entity = ?",
+            new String[]{parent_id.toString(), entity},
             null,
             null,
             "date desc"
@@ -228,8 +417,8 @@ public class Orm {
         }
     }
 
-    public static void unsetLedger(SQLiteDatabase db, Long entity_id, String entity, String type) {
-        db.delete(Ledger.SCHEMA, "entity_id = ? and entity = ? and type = ?",
-                new String[]{entity_id.toString(), entity, type});
+    public static void unsetLedger(SQLiteDatabase db, Long parent_id, String entity, String type) {
+        db.delete(Ledger.SCHEMA, "parent_id = ? and entity = ? and type = ?",
+                new String[]{parent_id.toString(), entity, type});
     }
 }

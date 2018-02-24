@@ -20,8 +20,7 @@ public class LedgerDetailActivity extends AppCompatActivity {
         Intent intent = getIntent();
         final Long account_id = intent.getLongExtra("account_id", 0);
         Long ledger_id = intent.getLongExtra("ledger_id", 0);
-        Ledger ledger = (Ledger) Orm.byId(Global.getReadDb(getApplicationContext()),
-                    Ledger.tableName, Ledger.class, ledger_id);
+        Ledger ledger = (Ledger) Orm.getLedgerById(Global.getReadDb(getApplicationContext()), ledger_id);
 
         TextView blink = (TextView)findViewById(R.id.lDetBackLink);
         blink.setOnClickListener(new View.OnClickListener() {
@@ -29,11 +28,13 @@ public class LedgerDetailActivity extends AppCompatActivity {
                 goToList(account_id);
             }
         });
+        ((TextView)findViewById(R.id.lDetId)).setText(ledger._id.toString());
+        ((TextView)findViewById(R.id.lDetParentId)).setText(ledger.parent_id.toString());
+        ((TextView)findViewById(R.id.lDetEntity)).setText(ledger.entity);
         ((TextView)findViewById(R.id.lDetType)).setText(ledger.type);
         ((TextView)findViewById(R.id.lDetDate)).setText(ledger.date.toString());
         ((TextView)findViewById(R.id.lDetLongval)).setText(ledger.longval.toString());
-        ((TextView)findViewById(R.id.lDetTextval)).setText(ledger.textval);
-        ((TextView)findViewById(R.id.lDetDescription)).setText(ledger.description);
+        ((TextView)findViewById(R.id.lDetTextval)).setText(ledger.strval);
     }
 
     public void goToList(Long account_id) {
