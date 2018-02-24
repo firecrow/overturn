@@ -92,9 +92,6 @@ public class AccountActivity extends AppCompatActivity {
         a.setUI("imapHost", (View) findViewById(R.id.imapHost));
         a.setUI("imapPort", (View) findViewById(R.id.imapPort));
         a.setUI("imapSslType", (View) findViewById(R.id.imapSslType));
-        a.setUI("smtpHost", (View) findViewById(R.id.smtpHost));
-        a.setUI("smtpPort", (View) findViewById(R.id.smtpPort));
-        a.setUI("smtpSslType", (View) findViewById(R.id.smtpSslType));
     }
 
     public void save() {

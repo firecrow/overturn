@@ -68,7 +68,7 @@ public class Fetcher {
         return new URLName(
                 protocol,
                 a.imapHost,
-                a.imapPort,
+                a.imapPort.intValue(),
                 "Inbox",
                 a.user,
                 a.password);

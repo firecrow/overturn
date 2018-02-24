@@ -89,6 +89,8 @@ public class Orm {
     private static Long insertMaster(SQLiteDatabase db, String entity) {
         ContentValues vals = new ContentValues();
         vals.put("entity", entity);
+        vals.put("parent_id", 0);
+        vals.put("date", new Date().getTime());
         /*
         Intent intent = new Intent(Ledger.LEDGER_UPDATED);
         context.sendBroadcast(intent);
@@ -110,13 +112,18 @@ public class Orm {
                         continue;
                     }
                     Ledger ledger = new Ledger();
+                    ledger.type = f.getName();
+                    if(ledger.type.equals("_id") || ledger.type.equals("_entity")){
+                        continue;
+                    }
                     ledger.date = new Date();
                     ledger.entity = obj._entity;
                     ledger.parent_id = obj._id;
-                    ledger.type = f.getName();
-                    Log.d("fcrow", String.format("------------ parent:%d, entity:%s, type:%s", obj._id, obj._entity, f.getName()));
+                    Log.d("fcrow", String.format("------------ parent:%d, entity:%s, type:%s %s", obj._id, obj._entity, f.getName(), f.getType().getName()));
+                    ;
                     if (f.getType() == Long.class) {
                         ledger.longval = (Long) f.get(obj);
+                        Log.d("fcrow", String.format("------------ long: %d", ledger.longval));
                     } else if (f.getType() == Date.class) {
                         ledger.longval = ((Date)f.get(obj)).getTime();
                     } else if (f.getType() == String.class) {
@@ -125,12 +132,12 @@ public class Orm {
                     set(db, ledger);
                 }
             }
-        } catch(Exception e){
-            db.endTransaction();
+            db.setTransactionSuccessful();
+        } catch (Exception e){
             Log.d("fcrow", "------------ upsert called"+e.getMessage());
+        } finally {
+            db.endTransaction();
         }
-        db.setTransactionSuccessful();
-        db.endTransaction();
     }
 
     public static Data byId(SQLiteDatabase db, Class<? extends Data> cls, String entity, Long parent_id) {
@@ -159,7 +166,7 @@ public class Orm {
         Cursor cursor = db.query(
                 Ledger.SCHEMA,
                 new String[]{"_id"},
-                "entity = ?",
+                "entity = ? and parent_id = 0",
                 new String[]{entity},
                 null,
                 null,
@@ -464,6 +471,8 @@ public class Orm {
                             } catch (NumberFormatException e) {
                                 // TODO: better handle this;
                             }
+                        } else if (type.equals(Long.class)) {
+                            f.set(obj, Long.valueOf(value));
                         }
                     }
                 }catch(IllegalAccessException e){

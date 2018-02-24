@@ -26,19 +26,10 @@ public class Account extends ModelBase {
     public String password;
 
     @DbField
-    public String smtpHost;
-
-    @DbField
-    public Integer smtpPort;
-
-    @DbField
-    public String smtpSslType;
-
-    @DbField
     public String imapHost;
 
     @DbField
-    public Integer imapPort;
+    public Long imapPort;
 
     @DbField
     public String imapSslType;
