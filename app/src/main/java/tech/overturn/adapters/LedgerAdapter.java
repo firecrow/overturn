@@ -40,19 +40,26 @@ public class LedgerAdapter extends ArrayAdapter<Ledger> {
             LayoutInflater inflater = ((Activity)context).getLayoutInflater();
             row = inflater.inflate(layoutId, parent, false);
             cont = new LedgerCont();
-            cont.type = (TextView)row.findViewById(R.id.ledgerType);
+            cont.typeValue = (TextView)row.findViewById(R.id.ledgerTypeValue);
             cont.date = (TextView)row.findViewById(R.id.ledgerDate);
-            cont.longval = (TextView)row.findViewById(R.id.ledgerLongval);
-            cont.textval = (TextView)row.findViewById(R.id.ledgerTextval);
+            cont.entity = (TextView)row.findViewById(R.id.ledgerEntity);
+            cont.parent_id = (TextView)row.findViewById(R.id.ledgerParentId);
             row.setTag(cont);
         }else{
             cont = (LedgerCont)row.getTag();
         }
         Ledger ledger = larray.get(position);
-        cont.type.setText(ledger.type);
+        cont.entity.setText(ledger.entity);
+        cont.parent_id.setText(ledger.parent_id.toString());
         cont.date.setText(ledger.date.toString());
-        cont.longval.setText(ledger.longval.toString());
-        cont.textval.setText(ledger.strval);
+        String value = null;
+        if(ledger.longval != 0L){
+            value = ledger.longval.toString();
+        } else {
+            value = ledger.strval;
+        }
+        cont.typeValue.setText(String.format("%d %s: %s",ledger._id, ledger.type, value));
+
         return row;
     }
 
@@ -62,10 +69,9 @@ public class LedgerAdapter extends ArrayAdapter<Ledger> {
     }
 
     public static class LedgerCont {
+        TextView typeValue;
         TextView date;
-        TextView type;
-        TextView label;
-        TextView longval;
-        TextView textval;
+        TextView entity;
+        TextView parent_id;
     }
 }

@@ -74,6 +74,7 @@ public class Queue extends Service {
         for(Long id: ids) {
             if (initial || Account.runStateForId(getApplicationContext(), id).equals(Ledger.QUEUED)) {
                 Account account = Account.byId(Global.getReadDb(getApplicationContext()), id);
+                Log.d("fcrow", String.format("------------- account id:%d, is null:%b", id, account == null));
                 new Fetcher(getApplicationContext(), account).loop();
                 Orm.set(Global.getWriteDb(getApplicationContext()),  
                     Account.tableName, id, Ledger.ACCOUNT_RUNNING_STATUS, new Date(), null, Ledger.RUNNING);
