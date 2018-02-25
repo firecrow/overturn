@@ -1,5 +1,6 @@
 package tech.overturn.model;
 
+import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.design.widget.CoordinatorLayout;
 
@@ -12,7 +13,7 @@ public class Data {
     @DbField
     public String _entity;
 
-    public void save(SQLiteDatabase db) {
-        Orm.upsert(db, this);
+    public void save(Context context) {
+        Orm.upsert(context, this);
     }
 }

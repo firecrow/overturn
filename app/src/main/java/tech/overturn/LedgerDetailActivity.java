@@ -19,7 +19,7 @@ public class LedgerDetailActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         Long ledger_id = intent.getLongExtra("ledger_id", 0);
-        Ledger ledger = (Ledger) Orm.getLedgerById(Global.getReadDb(getApplicationContext()), ledger_id);
+        Ledger ledger = (Ledger) Orm.getLedgerById(getApplicationContext(), ledger_id);
 
         TextView blink = (TextView)findViewById(R.id.lDetBackLink);
         blink.setOnClickListener(new View.OnClickListener() {

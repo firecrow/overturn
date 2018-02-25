@@ -32,9 +32,9 @@ public class Queue extends Service {
                 .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
                 .build();
 
-        Orm.set(Global.getWriteDb(getApplicationContext()),
+        Orm.set(getApplicationContext(),
                 Global.GLOBAL, 0L, Ledger.INFO_TYPE, new Date(), null, "service created");
-        //runLoops(true);
+        runLoops(true);
     }
 
     @Override
@@ -51,7 +51,7 @@ public class Queue extends Service {
             if (intent.getAction().equals(Global.TRIGGER_FETCH)) {
                 Long id = intent.getLongExtra("account_id", -1L);
 
-                Orm.set(Global.getWriteDb(getApplicationContext()),
+                Orm.set(getApplicationContext(),
                         Account.tableName, id, Ledger.ACCOUNT_RUNNING_STATUS, new Date(),
                         null, Ledger.QUEUED);
                 runLoops(false);
@@ -60,7 +60,7 @@ public class Queue extends Service {
                 Long id = intent.getLongExtra("account_id", -1L);
                 String existing =  Account.runStateForId(getApplicationContext(), id);
                 String status = existing.equals(Ledger.RUNNING) ? Ledger.STOPING : Ledger.STOPED;
-                Orm.set(Global.getWriteDb(getApplicationContext()),
+                Orm.set(getApplicationContext(),
                         Account.tableName, id, Ledger.ACCOUNT_RUNNING_STATUS, new Date(),
                         null, status);
             }
@@ -73,9 +73,9 @@ public class Queue extends Service {
         List<Long> ids = Account.allIds(getApplicationContext());
         for(Long id: ids) {
             if (initial || Account.runStateForId(getApplicationContext(), id).equals(Ledger.QUEUED)) {
-                Account account = Account.byId(Global.getReadDb(getApplicationContext()), id);
+                Account account = Account.byId(getApplicationContext(), id);
                 Log.d("fcrow", String.format("------------- account id:%d, is null:%b", id, account == null));
-                Orm.set(Global.getWriteDb(getApplicationContext()),
+                Orm.set(getApplicationContext(),
                         Account.tableName, id, Ledger.ACCOUNT_RUNNING_STATUS, new Date(), null, Ledger.RUNNING);
                 new Fetcher(getApplicationContext(), account).loop();
             }
@@ -85,7 +85,7 @@ public class Queue extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Orm.insert(Global.getWriteDb(getApplicationContext()), 
+        Orm.insert(getApplicationContext(), 
             Global.GLOBAL, 0L, Ledger.INFO_TYPE, new Date(), null, "service destroyed");
         stopSelf();
     }

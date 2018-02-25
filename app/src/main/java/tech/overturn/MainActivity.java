@@ -59,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onResume(){
         super.onResume();
-        List<Account> addata = (List<Account>) Orm.byEntity(Global.getReadDb(getApplicationContext()),
+        List<Account> addata = (List<Account>) Orm.byEntity(getApplicationContext(),
                 Account.class, Account.tableName);
 
         lview = (ListView) findViewById(R.id.accountList);

@@ -7,8 +7,10 @@ import com.sun.mail.iap.ProtocolException;
 import com.sun.mail.imap.IMAPFolder;
 import com.sun.mail.imap.protocol.IMAPProtocol;
 import com.sun.mail.imap.protocol.Status;
+import com.sun.mail.util.MimeUtil;
 
 
+import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
 import java.util.Date;
 import java.util.Properties;
@@ -19,6 +21,7 @@ import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.Store;
 import javax.mail.URLName;
+import javax.mail.internet.MimeUtility;
 
 import tech.overturn.R;
 import tech.overturn.model.Account;
@@ -109,9 +112,9 @@ public class Fetcher {
             Message[] msgs = state.folder.getMessagesByUID(previous, uidnext - 1);
             notifyUpdates(msgs);
             a.uidnext = uidnext;
-            Orm.set(Global.getWriteDb(context),
+            Orm.set(context,
                     Account.tableName, a._id, Ledger.UID_NEXT, new Date(), uidnext, null);
-            Orm.insert(Global.getWriteDb(context),
+            Orm.set(context,
                     Account.tableName, a._id, Ledger.MESSAGE_COUNT_TYPE, new Date(), Long.valueOf(msgs.length), null);
         }
         if(state.folder != null && state.folder.isOpen()) {
@@ -132,6 +135,9 @@ public class Fetcher {
         }
         for (int i = 0; i < msgs.length; i++) {
             String from = msgs[i].getFrom()[0].toString();
+            try {
+                from = MimeUtility.decodeText(from);
+            } catch( UnsupportedEncodingException e){}
             String subject = msgs[i].getSubject();
             new CrowNotification(context).send(
                     from, subject, msg_group_key, R.drawable.overturn_notif, false);
@@ -139,7 +145,7 @@ public class Fetcher {
     }
 
     public void loop(){
-        Orm.set(Global.getWriteDb(context), 
+        Orm.set(context, 
             Account.tableName, a._id, Ledger.FETCH_TASK_CREATED, new Date(), null, null); 
         final Fetcher self = this;
         final Runnable runnable = new Runnable() {
@@ -148,7 +154,7 @@ public class Fetcher {
             public void run() {
                 while (true) {
                     if(!Account.runStateForId(context, _account._id).equals(Ledger.RUNNING)){
-                        Orm.set(Global.getWriteDb(context), 
+                        Orm.set(context, 
                             Account.tableName, _account._id, Ledger.ACCOUNT_RUNNING_STATUS, new Date(), null, Ledger.STOPED);
                         break;
                     }
@@ -159,7 +165,7 @@ public class Fetcher {
                     Exception exc = null;
                     try {
                         uidnext = fetchMail(connect());
-                        Orm.set(Global.getWriteDb(context), 
+                        Orm.set(context, 
                             Account.tableName, _account._id, Ledger.LATEST_FETCH,
                             new Date(), new Date().getTime() - startDebug.getTime(), null);
                         Log.d("fcrow", String.format( "------------ latest fetch uid: %d", uidnext));
@@ -174,7 +180,7 @@ public class Fetcher {
                     }
 
                     if (exc != null) {
-                        Orm.set(Global.getWriteDb(context), 
+                        Orm.set(context, 
                             Account.tableName, _account._id, Ledger.MESSAGING_ERROR,
                             new Date(), new Date().getTime() - startDebug.getTime(), exceptType);
                     }
@@ -182,7 +188,7 @@ public class Fetcher {
                     try {
                         Thread.sleep(delay);
                     } catch (InterruptedException e) {
-                        Orm.set(Global.getWriteDb(context), 
+                        Orm.set(context, 
                             Account.tableName, _account._id, Ledger.MESSAGING_ERROR,
                             new Date(), new Date().getTime() - startDebug.getTime(), Ledger.SLEEP_THREAD_INTERRUPTED);
                     }

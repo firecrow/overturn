@@ -45,12 +45,8 @@ public class Global {
         return dbh;
     }
 
-    public static SQLiteDatabase getWriteDb(Context context) {
+    public static SQLiteDatabase getDb(Context context) {
         return getDbh(context).getWritableDatabase();
-    }
-
-    public static SQLiteDatabase getReadDb(Context context) {
-        return getDbh(context).getReadableDatabase();
     }
 
     public static String stackToString(Exception e) {

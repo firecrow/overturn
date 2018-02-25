@@ -30,7 +30,7 @@ public class AccountActivity extends AppCompatActivity {
         if (id == 0) {
             this.a = new Account();
         } else {
-            this.a = (Account) Orm.byId(Global.getWriteDb(getApplicationContext()),
+            this.a = (Account) Orm.byId(getApplicationContext(),
                     Account.class, Account.tableName, id);
         }
         setUpUI();
@@ -89,9 +89,8 @@ public class AccountActivity extends AppCompatActivity {
     }
 
     public void save() {
-        SQLiteDatabase db = Global.getWriteDb(getApplicationContext());
         Orm.backfillFromUI(a, a.ui);
-        a.save(db);
+        a.save(getApplicationContext());
     }
 
     public void goToMain() {

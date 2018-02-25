@@ -43,13 +43,13 @@ public class Account extends ModelBase {
         this._entity = tableName;
     }
 
-    public static Account byId(SQLiteDatabase db, Long id){
-        Account a = (Account) Orm.byId(db, Account.class, Account.tableName, id);
+    public static Account byId(Context context, Long id){
+        Account a = (Account) Orm.byId(context, Account.class, Account.tableName, id);
         return a;
     }
 
     public static List<Long> allIds(Context context) {
-        List<Id> ids =  Orm.idsByEntity(Global.getWriteDb(context), Account.tableName);
+        List<Id> ids =  Orm.idsByEntity(context, Account.tableName);
         List<Long> longs = new ArrayList<Long>();
         for(Id id: ids) {
             longs.add(id._id);
@@ -58,7 +58,7 @@ public class Account extends ModelBase {
     }
 
     public static String runStateForId(Context context, Long id) {
-        Ledger state = Orm.getAttribute(Global.getReadDb(context),
+        Ledger state = Orm.getAttribute(context,
                 Ledger.ACCOUNT_RUNNING_STATUS, id, Account.tableName);
         Log.d("fcrow", String.format("--------------- state is? %b", state == null));
         if (state == null) {

@@ -61,7 +61,7 @@ public class LedgerActivity extends AppCompatActivity {
 
     private void refresh() {
         Log.d("fcrow", "-------------- refresh called");
-        List<Ledger> ldata = Orm.recentLedgers(Global.getReadDb(getApplicationContext()),
+        List<Ledger> ldata = Orm.recentLedgers(getApplicationContext(),
                 1000 * 60 * 30L);
         Log.d("fcrow", "-------------- after refresh");
 
