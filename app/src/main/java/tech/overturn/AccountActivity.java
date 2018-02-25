@@ -39,7 +39,6 @@ public class AccountActivity extends AppCompatActivity {
         TextView blink = (TextView)findViewById(R.id.backLink);
         TextView slink = (TextView)findViewById(R.id.stopLink);
         TextView flink = (TextView)findViewById(R.id.fetchLink);
-        TextView llink = (TextView)findViewById(R.id.ledgerLink);
         View.OnClickListener back = new View.OnClickListener() {
             public void onClick(View v) {
                 goToMain();
@@ -61,16 +60,11 @@ public class AccountActivity extends AppCompatActivity {
                 startService(fetchItem);
             }
         };
-        View.OnClickListener ledger = new View.OnClickListener() {
-            public void onClick(View v) {
-                goToLedger(a._id);
-            }
-        };
+
         btn.setOnClickListener(back);
         blink.setOnClickListener(back);
         slink.setOnClickListener(stop);
         flink.setOnClickListener(fetch);
-        llink.setOnClickListener(ledger);
     }
 
     @Override
@@ -102,12 +96,5 @@ public class AccountActivity extends AppCompatActivity {
 
     public void goToMain() {
         startActivity(new Intent(this, MainActivity.class));
-    }
-
-    public void goToLedger(Long id) {
-        Log.d("fcrow", "------------ going to ledger");
-        Intent intent = new Intent(this, LedgerActivity.class);
-        intent.putExtra("account_id", id);
-        startActivity(intent);
     }
 }

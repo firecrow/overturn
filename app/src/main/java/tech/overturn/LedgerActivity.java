@@ -21,7 +21,6 @@ import tech.overturn.util.Orm;
 
 public class LedgerActivity extends AppCompatActivity {
 
-    Long account_id;
     ListView lview;
     LocalReceiver recv;
 
@@ -42,7 +41,7 @@ public class LedgerActivity extends AppCompatActivity {
         lview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                goToLedger(id, account_id);
+                goToLedger(id);
             }
         });
     }
@@ -82,10 +81,9 @@ public class LedgerActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    private void goToLedger(Long id, Long account_id) {
+    private void goToLedger(Long id) {
         Intent intent = new Intent(this, LedgerDetailActivity.class);
         intent.putExtra("ledger_id", id.longValue());
-        intent.putExtra("account_id", account_id.longValue());
         startActivity(intent);
     }
 

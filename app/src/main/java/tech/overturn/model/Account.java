@@ -2,6 +2,7 @@ package tech.overturn.model;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
+import android.util.Log;
 
 import tech.overturn.util.DbField;
 import tech.overturn.util.Global;
@@ -59,6 +60,7 @@ public class Account extends ModelBase {
     public static String runStateForId(Context context, Long id) {
         Ledger state = Orm.getAttribute(Global.getReadDb(context),
                 Ledger.ACCOUNT_RUNNING_STATUS, id, Account.tableName);
+        Log.d("fcrow", String.format("--------------- state is? %b", state == null));
         if (state == null) {
             return Ledger.STOPED;
         } else {

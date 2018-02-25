@@ -18,14 +18,13 @@ public class LedgerDetailActivity extends AppCompatActivity {
         setContentView(R.layout.activity_ledger_detail);
 
         Intent intent = getIntent();
-        final Long account_id = intent.getLongExtra("account_id", 0);
         Long ledger_id = intent.getLongExtra("ledger_id", 0);
         Ledger ledger = (Ledger) Orm.getLedgerById(Global.getReadDb(getApplicationContext()), ledger_id);
 
         TextView blink = (TextView)findViewById(R.id.lDetBackLink);
         blink.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                goToList(account_id);
+                goToList();
             }
         });
         ((TextView)findViewById(R.id.lDetId)).setText(ledger._id.toString());
@@ -37,9 +36,8 @@ public class LedgerDetailActivity extends AppCompatActivity {
         ((TextView)findViewById(R.id.lDetTextval)).setText(ledger.strval);
     }
 
-    public void goToList(Long account_id) {
+    public void goToList() {
         Intent intent = new Intent(this, LedgerActivity.class);
-        intent.putExtra("account_id", account_id);
         startActivity(intent);
     }
 }

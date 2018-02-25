@@ -1,6 +1,7 @@
 package tech.overturn.service;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.sun.mail.iap.ProtocolException;
 import com.sun.mail.imap.IMAPFolder;
@@ -161,6 +162,7 @@ public class Fetcher {
                         Orm.set(Global.getWriteDb(context), 
                             Account.tableName, _account._id, Ledger.LATEST_FETCH,
                             new Date(), new Date().getTime() - startDebug.getTime(), null);
+                        Log.d("fcrow", String.format( "------------ latest fetch uid: %d", uidnext));
                     } catch (ConnectException e) {
                         delay *= 5;
                         exceptType = Ledger.NETWORK_UNREACHABLE;

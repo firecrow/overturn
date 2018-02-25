@@ -38,7 +38,6 @@ public class Orm {
     static String[] fields = new String[]{"_id", "parent_id", "entity", "date", "type", "longval", "strval"};
 
     public static Ledger ledgerFromCursor(Cursor cursor) {
-        Log.d("fcrow", String.format("--------------- date:%d", cursor.getLong(3)));
         Ledger ledger = new Ledger(
             cursor.getLong(1),
             cursor.getString(2),
@@ -52,7 +51,6 @@ public class Orm {
     }
 
     public static List<Ledger> recentLedgers(SQLiteDatabase db, Long since) {
-        Log.d("fcrow", "----------- recentLedgers called");
         List<Ledger> ledgers = new ArrayList<Ledger>();
         Cursor cursor = db.query(
                 Ledger.SCHEMA,
@@ -63,15 +61,11 @@ public class Orm {
                 null,
                 "date desc"
         );
-        Log.d("fcrow", "----------- after query recentLedgers called");
         while(cursor.moveToNext()){
-            Log.d("fcrow", "----------- next");
             Ledger l = ledgerFromCursor(cursor);
-            Log.d("fcrow", "----------- next: "+l.date.toString());
             ledgers.add(ledgerFromCursor(cursor));
         }
         cursor.close();
-        Log.d("fcrow", "----------- returning");
         return ledgers;
     }
 
@@ -102,7 +96,6 @@ public class Orm {
     }
 
     public static void upsert(SQLiteDatabase db, Data obj) {
-        Log.d("fcrow", "------------ upsert called");
         db.beginTransaction();
         if(obj._id == null || obj._id == 0 || getMaster(db, obj._id, obj._entity) == null) {
             obj._id = Orm.insertMaster(db, obj._entity);
@@ -124,11 +117,9 @@ public class Orm {
                     ledger.date = new Date();
                     ledger.entity = obj._entity;
                     ledger.parent_id = obj._id;
-                    Log.d("fcrow", String.format("------------ parent:%d, entity:%s, type:%s %s", obj._id, obj._entity, f.getName(), f.getType().getName()));
                     ;
                     if (f.getType() == Long.class) {
                         ledger.longval = (Long) f.get(obj);
-                        Log.d("fcrow", String.format("------------ long: %d", ledger.longval));
                     } else if (f.getType() == Date.class) {
                         ledger.longval = ((Date)f.get(obj)).getTime();
                     } else if (f.getType() == String.class) {
@@ -140,6 +131,7 @@ public class Orm {
             db.setTransactionSuccessful();
         } catch (Exception e){
             Log.d("fcrow", "------------ upsert called"+e.getMessage());
+            e.printStackTrace();
         } finally {
             db.endTransaction();
         }
@@ -147,7 +139,6 @@ public class Orm {
 
     public static Data byId(SQLiteDatabase db, Class<? extends Data> cls, String entity, Long parent_id) {
         Ledger master = ledgersById(db, parent_id, entity);
-        Log.d("fcrow", String.format("master is? %b ", master == null));
         Data obj = null;
         try {
             obj = cls.newInstance();

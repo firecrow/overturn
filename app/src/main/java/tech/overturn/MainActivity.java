@@ -3,10 +3,12 @@ package tech.overturn;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import java.util.List;
 
@@ -40,6 +42,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        TextView llink = (TextView)findViewById(R.id.ledgerLink);
+        View.OnClickListener ledger = new View.OnClickListener() {
+            public void onClick(View v) {
+                goToLedger();
+            }
+        };
+        llink.setOnClickListener(ledger);
+
         Intent serviceItem = new Intent(getApplicationContext(), Queue.class);
         serviceItem.setAction(Global.START_SERVICE);
         startService(serviceItem);
@@ -69,4 +79,11 @@ public class MainActivity extends AppCompatActivity {
         intent.putExtra("account_id", id);
         startActivity(intent);
     }
+
+    public void goToLedger() {
+        Log.d("fcrow", "------------ going to ledger");
+        Intent intent = new Intent(this, LedgerActivity.class);
+        startActivity(intent);
+    }
+
 }
