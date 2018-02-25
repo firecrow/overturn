@@ -35,6 +35,7 @@ public class Ledger {
     public static String UID_NEXT = "uidnext";
     public static String MESSAGE_COUNT_TYPE = "message_count";
     public static String FETCH_TASK_CREATED = "fetch_task_created";
+    public static String FETCH_RANGE = "fetch_range";
     public static String LATEST_FETCH = "latest_fetch";
     public static String SLEEP_THREAD_INTERRUPTED = "sleep_thread_interrupted";
     public static String ACCOUNT_RUNNING_STATUS = "account_running_status";

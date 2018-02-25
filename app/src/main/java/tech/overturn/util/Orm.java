@@ -83,10 +83,11 @@ public class Orm {
                 ;
     }
 
-    private static Long insertMaster(Context context, String entity) {
+    private static Long insertMaster(Context context, String entity, Long parent_id, String parent_entity) {
         ContentValues vals = new ContentValues();
-        vals.put("entity", entity);
-        vals.put("parent_id", 0);
+        vals.put("type", entity);
+        vals.put("entity", parent_entity);
+        vals.put("parent_id", parent_entity);
         vals.put("date", new Date().getTime());
         broadcast(context);
         return Global.getDb(context).insertOrThrow(Ledger.SCHEMA, null, vals);
@@ -95,7 +96,7 @@ public class Orm {
     public static void upsert(Context context, Data obj) {
         Global.getDb(context).beginTransaction();
         if(obj._id == null || obj._id == 0 || getMaster(context, obj._id, obj._entity) == null) {
-            obj._id = Orm.insertMaster(context, obj._entity);
+            obj._id = Orm.insertMaster(context, obj._entity, obj._parent_id, obj._parent_entity);
         }else {
             bumpDate(context, obj._id);
         }
@@ -167,7 +168,7 @@ public class Orm {
         Cursor cursor = Global.getDb(context).query(
                 Ledger.SCHEMA,
                 new String[]{"_id"},
-                "entity = ? and parent_id = 0",
+                "type = ?",
                 new String[]{entity},
                 null,
                 null,
@@ -210,6 +211,7 @@ public class Orm {
     }
 
     public static void set(Context context, Ledger ledger) {
+        Log.d("fcrow", String.format("entity:%s, parent_id:%d, type: %s", ledger.entity, ledger.parent_id, ledger.type));
         if (ledger.entity == null || ledger.parent_id == null || ledger.type == null) {
             throw new IllegalArgumentException("for 'set' all three of 'entity', 'parent_id', and 'type' need to be not null");
         }
@@ -373,7 +375,7 @@ public class Orm {
         Cursor cursor = Global.getDb(context).query(
                 Ledger.SCHEMA,
                 fields,
-                "_id = ? and entity = ?",
+                "_id = ? and type = ?",
                 new String[]{parent_id.toString(), entity},
                 null,
                 null,
@@ -392,6 +394,7 @@ public class Orm {
     public static Ledger ledgersById(Context context, Long parent_id, String entity) {
         Ledger master = getMaster(context, parent_id, entity);
         if(master == null) {
+            Log.d("fcrow", "---------------- oops master is null");
             return null;
         }
         Cursor cursor = Global.getDb(context).query(

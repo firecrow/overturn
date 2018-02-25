@@ -62,6 +62,10 @@ public class MainActivity extends AppCompatActivity {
         List<Account> addata = (List<Account>) Orm.byEntity(getApplicationContext(),
                 Account.class, Account.tableName);
 
+        Log.d("fcrow", String.format("---------------- size:%d", addata.size()));
+        Log.d("fcrow", String.format("---------------- is null :%b", addata.get(0) == null));
+        Log.d("fcrow", String.format("---------------- _id :%d", addata.get(0)._id));
+        Log.d("fcrow", String.format("---------------- email :%s", addata.get(0).email));
         lview = (ListView) findViewById(R.id.accountList);
         AccountAdapter adapter = (AccountAdapter)lview.getAdapter();
 
